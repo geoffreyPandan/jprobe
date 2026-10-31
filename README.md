@@ -15,6 +15,7 @@ checkout or its build cache.
   record, and installed Fatdog detector results.
 - `release-assets.json`: SHA-256 and size for the separately packaged binaries.
 - `licenses/`: upstream license texts. Preserve notices in redistributed files.
+- `docs/MACOS-BUILD.md`: native macOS client build and verification steps.
 
 ## Apply the source changes
 
