@@ -1,0 +1,204 @@
+{
+  "version": "17.25.0",
+  "protocol": "jprobe",
+  "jsGlobal": "Jprobe",
+  "tests": [
+    {
+      "suite": "candidate",
+      "count": 12,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224524-candidate/candidate.json"
+    },
+    {
+      "suite": "extra",
+      "count": 8,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224546-extra/extra.json"
+    },
+    {
+      "suite": "warm",
+      "count": 2,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224601-warm/warm.json"
+    },
+    {
+      "suite": "diagnostics",
+      "count": 3,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224605-diagnostics/diagnostics.json"
+    },
+    {
+      "suite": "client",
+      "count": 7,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224606-client/client.json"
+    },
+    {
+      "suite": "assets",
+      "count": 6,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224614-assets/assets.json"
+    },
+    {
+      "suite": "inject",
+      "count": 2,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224618-inject/inject.json"
+    },
+    {
+      "suite": "memory",
+      "count": 2,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224620-memory/memory.json"
+    },
+    {
+      "suite": "bounds",
+      "count": 2,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224622-bounds/bounds.json"
+    },
+    {
+      "suite": "stress32",
+      "count": 64,
+      "record": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation/20261031-224522/20261031-224624-stress32/stress32.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "jprobe-server",
+      "sha256": "a73b151b0f9319fd07fafacfd91d3987450b9efaa46843b3c06a7c6b1a0b4734",
+      "size": 84855816,
+      "distinctPrintableKeywordMatches": 0,
+      "rawAsciiMatchesIgnoringCase": 0,
+      "rawUtf16LEMatchesIgnoringCase": 0
+    },
+    {
+      "name": "jprobe-agent.so",
+      "sha256": "c9705300079e8a890e44328e7c9b2143fde432d560a9407fee1bfb59d60c1356",
+      "size": 39114480,
+      "distinctPrintableKeywordMatches": 0,
+      "rawAsciiMatchesIgnoringCase": 0,
+      "rawUtf16LEMatchesIgnoringCase": 0
+    },
+    {
+      "name": "jprobe-gadget.so",
+      "sha256": "232c8a1c30bbed077fa619e5b4b7dec66cbc5da6e84c14a6a4d2f7b9be1eed79",
+      "size": 39409456,
+      "distinctPrintableKeywordMatches": 0,
+      "rawAsciiMatchesIgnoringCase": 0,
+      "rawUtf16LEMatchesIgnoringCase": 0
+    },
+    {
+      "name": "jprobe-inject",
+      "sha256": "b7a3591aeaf6ea4a1909aea1c26cb5505b7cdda91a62f64ad3eb88c91e306423",
+      "size": 84607480,
+      "distinctPrintableKeywordMatches": 0,
+      "rawAsciiMatchesIgnoringCase": 0,
+      "rawUtf16LEMatchesIgnoringCase": 0
+    },
+    {
+      "name": "jprobe-17.25.0-cp37-abi3-linux_x86_64.whl",
+      "size": 53605179,
+      "sha256": "a5177e904d780ec8bb76caad02f0b7e917c67524624692f761ef5b2a9d1bab7c"
+    },
+    {
+      "name": "jprobe-java-bridge-7.0.13.tgz",
+      "size": 82684,
+      "sha256": "13b512106584c9b3b9dfca2c2d906e7f53acc94c319f506b7e93a124dcb5ae55"
+    },
+    {
+      "name": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "size": 4723269,
+      "sha256": "011590316574070ce006a29e8c0b03f0777c29d17cfa4e889fdf08bc4a9ff462"
+    },
+    {
+      "name": "deps/tsc.tar.gz",
+      "size": 7825141,
+      "sha256": "05f7a368b74d7c809d49dc3925df8b1f3fc8956823e8181935424e7392eec29e"
+    }
+  ],
+  "clientEnvironment": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env",
+  "validationRun": "/home/jim/jprobe/candidates/shared-code-sync-r6d/validation-run.json",
+  "keywordAudit": {
+    "scope": "Android binaries, Python native extension, injected JS, and standalone Java bridge executable modules",
+    "zeroRawMatchesRequired": true,
+    "artifacts": [
+      {
+        "path": "/home/jim/jprobe/full-source/build/subprojects/frida-core/server/jprobe-server",
+        "sha256": "a73b151b0f9319fd07fafacfd91d3987450b9efaa46843b3c06a7c6b1a0b4734",
+        "size": 84855816,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/full-source/build/subprojects/frida-core/lib/agent/jprobe-agent.so",
+        "sha256": "c9705300079e8a890e44328e7c9b2143fde432d560a9407fee1bfb59d60c1356",
+        "size": 39114480,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/full-source/build/subprojects/frida-core/lib/gadget/jprobe-gadget.so",
+        "sha256": "232c8a1c30bbed077fa619e5b4b7dec66cbc5da6e84c14a6a4d2f7b9be1eed79",
+        "size": 39409456,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/full-source/build/subprojects/frida-core/inject/jprobe-inject",
+        "sha256": "b7a3591aeaf6ea4a1909aea1c26cb5505b7cdda91a62f64ad3eb88c91e306423",
+        "size": 84607480,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe/_jprobe.abi3.so",
+        "sha256": "ae688dd0ae1aef09e2cf54bea8f3380945b9cf798e65305b8a2eb03e254bae7c",
+        "size": 151182928,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/fs_agent.js",
+        "sha256": "8d37e02f0735b4f8ac8760cb52e02c0a4ab90a1186516522dce2ebe484640b95",
+        "size": 147559,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/tracer_agent.js",
+        "sha256": "de49787d6aa35ffce66e7415297023a6d8dffb244e55190f688a6b541084ba73",
+        "size": 256315,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/itracer_agent.js",
+        "sha256": "93e47b580474a55e9ceed6a0a1611e8d1efddcc91797836e8c8a0569e8b3b5a0",
+        "size": 33723,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/repl_agent.js",
+        "sha256": "0bf5aed84ba63ceb8b400ce4db15f9508cfa7297e30030ffe5b170e71797d953",
+        "size": 4799,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/bridges/java.js",
+        "sha256": "8c9036757723e15202a7255404f23b7446d00e462bdd79299a31cf3497345401",
+        "size": 236853,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/bridges/objc.js",
+        "sha256": "c158c93324679c86d99da15c632eebeabdafb4fe659de3b4ee466875cabc6d72",
+        "size": 49390,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env/lib/python3.12/site-packages/jprobe_tools/bridges/swift.js",
+        "sha256": "aac0de759a2ebbdb3eca044dc6dfd9b299f778476f0fe12321f951ca758070bd",
+        "size": 38370,
+        "matches": []
+      },
+      {
+        "path": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client/jprobe-java-bridge-7.0.13.tgz",
+        "sha256": "13b512106584c9b3b9dfca2c2d906e7f53acc94c319f506b7e93a124dcb5ae55",
+        "size": 82684,
+        "matches": []
+      }
+    ],
+    "passed": true
+  },
+  "limitations": [
+    "Raw ASCII and UTF-16LE scans cover the listed binaries and injected scripts; upstream attribution is retained separately.",
+    "Intermittent ARM32 helper crashes occurred in earlier official and custom tests; long-term stability is unproven.",
+    "Warm Java tests explicitly deoptimize the fixture before hooking.",
+    "No claim of universal nondetection or third-party application compatibility."
+  ]
+}

@@ -1,0 +1,58 @@
+diff --git a/glib/gdatetime.c b/glib/gdatetime.c
+index 299f679..de9178a 100644
+--- a/glib/gdatetime.c
++++ b/glib/gdatetime.c
+@@ -329,6 +329,44 @@ get_month_name_abbr_standalone (gint month)
+   return NULL;
+ }
+ 
++static const gchar *
++get_weekday_five_name (void)
++{
++  static gchar name[7];
++  static gsize initialized = 0;
++
++  if (g_once_init_enter (&initialized))
++    {
++      const gchar first[] = { 'F', 'r', 'i' };
++      const gchar last[] = { 'd', 'a', 'y', '\0' };
++      memcpy (name, first, sizeof first);
++      memcpy (name + sizeof first, last, sizeof last);
++      g_once_init_leave (&initialized, 1);
++    }
++
++  return name;
++}
++
++static const gchar *
++get_weekday_five_name_translated (void)
++{
++#ifdef ENABLE_NLS
++  static gchar key[sizeof ("full weekday name") + 7];
++  static gsize initialized = 0;
++
++  if (g_once_init_enter (&initialized))
++    {
++      memcpy (key, "full weekday name\004", sizeof ("full weekday name"));
++      memcpy (key + sizeof ("full weekday name"), get_weekday_five_name (), 7);
++      g_once_init_leave (&initialized, 1);
++    }
++
++  return glib_pgettext (key, sizeof ("full weekday name"));
++#else
++  return get_weekday_five_name ();
++#endif
++}
++
+ static const gchar *
+ get_weekday_name (gint day)
+ {
+@@ -343,7 +381,7 @@ get_weekday_name (gint day)
+     case 4:
+       return C_("full weekday name", "Thursday");
+     case 5:
+-      return C_("full weekday name", "Friday");
++      return get_weekday_five_name_translated ();
+     case 6:
+       return C_("full weekday name", "Saturday");
+     case 7:

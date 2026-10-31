@@ -1,0 +1,13 @@
+diff --git a/absl/time/internal/cctz/src/civil_time_detail.cc b/absl/time/internal/cctz/src/civil_time_detail.cc
+index 0b07e39..45114af 100644
+--- a/absl/time/internal/cctz/src/civil_time_detail.cc
++++ b/absl/time/internal/cctz/src/civil_time_detail.cc
+@@ -78,7 +78,7 @@ std::ostream& operator<<(std::ostream& os, weekday wd) {
+     case weekday::thursday:
+       return os << "Thursday";
+     case weekday::friday:
+-      return os << "Friday";
++      return os << "Fri" << "day";
+     case weekday::saturday:
+       return os << "Saturday";
+     case weekday::sunday:

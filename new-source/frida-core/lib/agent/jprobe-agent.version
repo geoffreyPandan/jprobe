@@ -1,0 +1,7 @@
+{
+  global:
+    jprobe_agent_main;
+
+  local:
+    *;
+};

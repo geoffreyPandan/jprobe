@@ -1,0 +1,14 @@
+JPROBE_1.0 {
+  global:
+    jprobe_agent_main;
+
+  local:
+    *;
+};
+
+GLIBC_2.2.5 {
+  local:
+    fopen*;
+    fseeko*;
+    ftello*;
+} JPROBE_1.0;

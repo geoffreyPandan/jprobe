@@ -1,0 +1,7 @@
+{
+  "backup": "/home/jim/jprobe/releases/20261031-225628-before-shared-code-sync-r6d",
+  "server": "/data/local/tmp/jprobe/jprobe-server",
+  "endpoint": "127.0.0.1:35000",
+  "client": "/home/jim/jprobe/candidates/shared-code-sync-r6d/client-env",
+  "serverSha256": "a73b151b0f9319fd07fafacfd91d3987450b9efaa46843b3c06a7c6b1a0b4734"
+}

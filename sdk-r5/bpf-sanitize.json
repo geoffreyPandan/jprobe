@@ -1,0 +1,134 @@
+[
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/arm/spawn-gater.elf",
+    "replacements": 0,
+    "beforeSha256": "2638a949e518f80e1f20a47b936718a985032655fae1cc00b3f1868a1ec30722",
+    "afterSha256": "2638a949e518f80e1f20a47b936718a985032655fae1cc00b3f1868a1ec30722"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/arm/syscall-tracer.elf",
+    "replacements": 0,
+    "beforeSha256": "4ef2752c7e9da9492001ddd3d044d695b81bd11ecabffa94b238efb30ba4d722",
+    "afterSha256": "4ef2752c7e9da9492001ddd3d044d695b81bd11ecabffa94b238efb30ba4d722"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/arm64/spawn-gater.elf",
+    "replacements": 0,
+    "beforeSha256": "da39e6aa6f1690785df762b6b64dac2ff21beac36a334eb25e7de42233c986f6",
+    "afterSha256": "da39e6aa6f1690785df762b6b64dac2ff21beac36a334eb25e7de42233c986f6"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/arm64/syscall-tracer.elf",
+    "replacements": 0,
+    "beforeSha256": "84395204e2a9c4bdbc8d64d8055fcc22d9f4c71d1bafbb9400963fe4b1229ea3",
+    "afterSha256": "84395204e2a9c4bdbc8d64d8055fcc22d9f4c71d1bafbb9400963fe4b1229ea3"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/arm64be/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "c7b06495038c5860057637bc4810f282a17f13f803f24a452e675bfbb5922e70",
+    "afterSha256": "5cac7058658f5652819ec1375591c2e3eeeea714ed1c45c6f9018fcb148bb8f9"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/arm64be/syscall-tracer.elf",
+    "replacements": 20,
+    "beforeSha256": "4e458b9a919ea38ce76ad10ad6d44b21fc61bf0ba37a13079de1cd1071e3d5ad",
+    "afterSha256": "896d36d769e5dc2828d4d8c7869928cf6e32887fe6799df48478efd826694b0c"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/armbe/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "54f2b7c490c5bc855c1c8dd1afd91c3f88a0d18c9ec70c28463677eecd93ffec",
+    "afterSha256": "9f8830121eec48da510187994c6ab9d9c8c51f0e914028045936850da600a4cb"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/armbe/syscall-tracer.elf",
+    "replacements": 16,
+    "beforeSha256": "c0f2e03d75d0b8e36e7203050da265ba4b79d555a316be4c54caaadee0f0ca21",
+    "afterSha256": "21d9e4b853f1910076ab483f4386d1a077882703c539c1900913e219bdfca417"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mips/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "6743305df4592f9d7d79fb3512470691fe1a10f75609b3dc62405a6c2612fe76",
+    "afterSha256": "eb585fb583cf066103f5d202254615795b2d8491630b9cb6c23cf94e7e8b4587"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mips/syscall-tracer.elf",
+    "replacements": 16,
+    "beforeSha256": "05804963a3e8ed44424b8570fc3f27a426c9af648310bc5144f7b67d8dd2a92b",
+    "afterSha256": "48e2d5325f80fe5b6e1b31b1ea0a8fd42777e32f2d8e0157825c3e148440a7a8"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mips64/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "a8fd63da0d67cf07750e642341f30caa83bc8ca600dee4bca3a4807ca1a24890",
+    "afterSha256": "f6492def565ad8a9a3240ded67cabd82c0f6082a24356ac2957f6989ed519b7a"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mips64/syscall-tracer.elf",
+    "replacements": 18,
+    "beforeSha256": "b7e2bccd569fa8bb64e8d1918097b58b6bc29b66deb83cdd52ddf81f2dc29624",
+    "afterSha256": "f505d9f356f7936fd1239e576ec9e61d7f1e0dce0cb1e1037f0f8e2654a1ad65"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mips64el/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "e3e23239bfef3189d0d84868213eef93fe0939ff1a62ebe1125a8b5103328c2d",
+    "afterSha256": "17013099edc195c130c41fc5f7ec51bd386d9e03195b323a5e3fda423fcce815"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mips64el/syscall-tracer.elf",
+    "replacements": 18,
+    "beforeSha256": "0905fd4618d9880141409f6859367bed4385a2348a543afa692ec65d6210f2e3",
+    "afterSha256": "ff0be42d7a34783ed54247472b1b9c8f2b3a03cdf308720ccfcd163b4d0eb08d"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mipsel/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "6f9f4749b11692782210e3f71e052b248bc32b8cdcafdfba9faade2a41ffd207",
+    "afterSha256": "9c687bdfabb675f840f900ae756daef5fb1915b110c7cb4c4890c38178e66210"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/mipsel/syscall-tracer.elf",
+    "replacements": 16,
+    "beforeSha256": "08bac2ef419d32485594d52a25fac38c711701349aa56cb1fe45cd2b486e2ef3",
+    "afterSha256": "28a07170aa36473115545bdc6c6de7e8e9be4bfb9c83975e15c1ef503f06a94b"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/noarch-big/activity-sampler.elf",
+    "replacements": 3,
+    "beforeSha256": "870a62360aa10a0a07980d6884cb3bd7f8651d407ee296d985f83f8a71ab1442",
+    "afterSha256": "445fd8a9774a39b9cb1074186cad998d12df4418cfa9b098328fd77ca03eea49"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/noarch-little/activity-sampler.elf",
+    "replacements": 0,
+    "beforeSha256": "8bfddd8d1a70edc86e4c1920ace0f328ff21683d33806b1634570b70752673ef",
+    "afterSha256": "8bfddd8d1a70edc86e4c1920ace0f328ff21683d33806b1634570b70752673ef"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/x86/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "c036096145291c8661b9b5842639cf08d0d98c15a6d73336d2df967b310adaba",
+    "afterSha256": "3b902112a4a5dc584912f41e9e7b3a86987fc8fa7300bce89583411848e856e5"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/x86/syscall-tracer.elf",
+    "replacements": 16,
+    "beforeSha256": "8e86466212365c23abc9d1912cf6cb926953589484d9c1bc62f1893526bdac38",
+    "afterSha256": "7aae37871c3d54cbceb70fb71e504e44e624b0b7351362e3cef79a0cfdd974a5"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/x86_64/spawn-gater.elf",
+    "replacements": 4,
+    "beforeSha256": "ed1679e6f2cd6cc65ac311e4c014cdfb1e341b6beb311f3e059e2e89067e564f",
+    "afterSha256": "f4186fccedcedf1fb9d71fd584e9929de4e5e16185063e2dc118f0f6ddafc487"
+  },
+  {
+    "path": "/home/jim/jprobe/full-source/subprojects/frida-core/src/linux/helpers/artifacts/bpf/x86_64/syscall-tracer.elf",
+    "replacements": 19,
+    "beforeSha256": "6546a77871d53e2173d79df92970eed3cbd24e8b9028682a173413c3d9c0ea62",
+    "afterSha256": "a590c6a70e350e69ba63625a97c388e706518ad59ab6678364528958fe2a6b06"
+  }
+]

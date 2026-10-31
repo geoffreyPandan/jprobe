@@ -1,0 +1,89 @@
+{
+  "port": 35000,
+  "checks": [
+    {
+      "class": "Lk",
+      "library": "fox",
+      "pid": 6107,
+      "pidAfter": 6107,
+      "loaded": true,
+      "clientExitCode": 0,
+      "clientOutput": "JPROBE_NATIVE_RESULT:{\"detected\":0,\"status\":\"port_scan = 0 (27042-27044)\\ndbus_fp   = 0 (/proc/net/tcp)\\ncombined  = 0\"}\n",
+      "native": {
+        "detected": 0,
+        "status": "port_scan = 0 (27042-27044)\ndbus_fp   = 0 (/proc/net/tcp)\ncombined  = 0"
+      },
+      "passed": true
+    },
+    {
+      "class": "Nk",
+      "library": "owl",
+      "pid": 6239,
+      "pidAfter": 6239,
+      "loaded": true,
+      "clientExitCode": 0,
+      "clientOutput": "JPROBE_NATIVE_RESULT:{\"detected\":0,\"status\":\"fd_scan  = 0 (memfd:frida-agent)\\nmaps_scan = 0 (stream scan of /proc/self/maps)\\ncombined = 0\"}\n",
+      "native": {
+        "detected": 0,
+        "status": "fd_scan  = 0 (memfd:frida-agent)\nmaps_scan = 0 (stream scan of /proc/self/maps)\ncombined = 0"
+      },
+      "passed": true
+    },
+    {
+      "class": "Ok",
+      "library": "sun",
+      "pid": 6357,
+      "pidAfter": 6357,
+      "loaded": true,
+      "clientExitCode": 0,
+      "clientOutput": "JPROBE_NATIVE_RESULT:{\"detected\":0,\"status\":\"maps_hex = 0 (frida bytes in r-xp)\\ndt_debug = 1 (runtime DT_DEBUG)\\nauxv     = 0 (auxv/ELF consistent)\\ncombined = 0 (3-way AND)\"}\n",
+      "native": {
+        "detected": 0,
+        "status": "maps_hex = 0 (frida bytes in r-xp)\ndt_debug = 1 (runtime DT_DEBUG)\nauxv     = 0 (auxv/ELF consistent)\ncombined = 0 (3-way AND)"
+      },
+      "passed": true
+    },
+    {
+      "class": "Qk",
+      "library": "ice",
+      "pid": 6480,
+      "pidAfter": 6480,
+      "loaded": true,
+      "clientExitCode": 0,
+      "clientOutput": "JPROBE_NATIVE_RESULT:{\"detected\":0,\"status\":\"=== 冰鉴悬镜（评分阈值制 · 加载期先跑）===\\n加载期相位(.init_array): 干净(1)   加载期命中数: 0\\n--------------------------------------------------\\n① TracerPid : 安全\\n② State     : 安全\\n③ 父进程链 : 安全\\n④ status完整: 安全\\n--------------------------------------------------\\n命中 0/4 路，阈值 >= 2 判检出\\n综合判定: 安全\\n\\n标记A: Fatdog_siren\\n标记B: Fatdog_sren\"}\n",
+      "native": {
+        "detected": 0,
+        "status": "=== 冰鉴悬镜（评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 0\n--------------------------------------------------\n① TracerPid : 安全\n② State     : 安全\n③ 父进程链 : 安全\n④ status完整: 安全\n--------------------------------------------------\n命中 0/4 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_siren\n标记B: Fatdog_sren"
+      },
+      "passed": true
+    },
+    {
+      "class": "Sk",
+      "library": "dusk",
+      "pid": 6602,
+      "pidAfter": 6602,
+      "loaded": true,
+      "clientExitCode": 0,
+      "clientOutput": "JPROBE_NATIVE_RESULT:{\"detected\":0,\"status\":\"=== 暮霭沉沉（6 路评分阈值制 · 加载期先跑）===\\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\\n--------------------------------------------------\\n① timing 侧信道    : 安全\\n② 版本/特征嗅探    : 安全\\n③ 可执行段私有脏页 : 安全\\n④ 无名可执行代码岛 : 命中\\n⑤ ARM64 跳板扫描   : 安全\\n⑥ libc 入口比对    : 安全\\n--------------------------------------------------\\n命中 1/6 路，阈值 >= 2 判检出\\n综合判定: 安全\\n\\n标记A: Fatdog_dusk\\n标记B: Fatdog_duks\"}\n",
+      "native": {
+        "detected": 0,
+        "status": "=== 暮霭沉沉（6 路评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n--------------------------------------------------\n① timing 侧信道    : 安全\n② 版本/特征嗅探    : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n--------------------------------------------------\n命中 1/6 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_dusk\n标记B: Fatdog_duks"
+      },
+      "passed": true
+    },
+    {
+      "class": "Vk27",
+      "library": "veil",
+      "pid": 6728,
+      "pidAfter": 6728,
+      "loaded": true,
+      "clientExitCode": 0,
+      "clientOutput": "JPROBE_NATIVE_RESULT:{\"detected\":0,\"status\":\"=== 轻纱覆影（7 路评分阈值制 · 加载期先跑）===\\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\\n--------------------------------------------------\\n① 线程上下文指纹   : 安全\\n② 时序交叉验证     : 安全\\n③ 可执行段私有脏页 : 安全\\n④ 无名可执行代码岛 : 命中\\n⑤ ARM64 跳板扫描   : 安全\\n⑥ libc 入口比对    : 安全\\n⑦ libc 段采样校验  : 安全\\n--------------------------------------------------\\n命中 1/7 路，阈值 >= 2 判检出\\n综合判定: 安全\\n\\n标记A: Fatdog_gauze\\n标记B: Fatdog_gauz\"}\n",
+      "native": {
+        "detected": 0,
+        "status": "=== 轻纱覆影（7 路评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n--------------------------------------------------\n① 线程上下文指纹   : 安全\n② 时序交叉验证     : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n⑦ libc 段采样校验  : 安全\n--------------------------------------------------\n命中 1/7 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_gauze\n标记B: Fatdog_gauz"
+      },
+      "passed": true
+    }
+  ]
+}

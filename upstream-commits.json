@@ -1,0 +1,8 @@
+{
+  "root": "f74818ada177756bd95c26235cdd26ebe4f07e76",
+  "frida-core": "f91556129517937e82831458d10f6b8f4ca06dbb",
+  "frida-gum": "5ebe3aeccab8dcd4b727378dab67fb15fa8a3cca",
+  "frida-python": "c6862934002a1835c51cd6a7ca4d7b949c968971",
+  "frida-tools": "a8c12cef7f728812bc8c70197505e8f40e1c26e4",
+  "idun": "eaf98270beab0ecf174e611d99036db6843a1865"
+}

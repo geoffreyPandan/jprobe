@@ -1,0 +1,1652 @@
+diff --git a/bindings/gumjs/devkit/meson.build b/bindings/gumjs/devkit/meson.build
+index f34bb71..cb9e854 100644
+--- a/bindings/gumjs/devkit/meson.build
++++ b/bindings/gumjs/devkit/meson.build
+@@ -22,5 +22,5 @@ custom_target('gumjs-devkit',
+     meson.current_build_dir(),
+   ] + devkit_options,
+   install: true,
+-  install_dir: get_option('libdir') / frida_libdir_name / 'devkits' / 'gumjs'
++  install_dir: get_option('libdir') / jprobe_libdir_name / 'devkits' / 'gumjs'
+ )
+diff --git a/bindings/gumjs/generate-bindings.py b/bindings/gumjs/generate-bindings.py
+index 4609ebe..71fd1fe 100644
+--- a/bindings/gumjs/generate-bindings.py
++++ b/bindings/gumjs/generate-bindings.py
+@@ -2636,14 +2636,14 @@ def generate_class_type_definitions(name, arch, flavor, api):
+                 description += """,
+      * but without a label for internal use. This breaks relocation of branches to
+      * locations inside the relocated range, and is an optimization for use-cases
+-     * where all branches are rewritten (e.g. Frida's Stalker)"""
++     * where all branches are rewritten (e.g. Jprobe's Stalker)"""
+         elif method.name.startswith("write_one"):
+             description = "Writes the next buffered instruction"
+             if method.name.endswith("_no_label"):
+                 description += """, but without a
+      * label for internal use. This breaks relocation of branches to locations
+      * inside the relocated range, and is an optimization for use-cases where all
+-     * branches are rewritten (e.g. Frida's Stalker)"""
++     * branches are rewritten (e.g. Jprobe's Stalker)"""
+         elif method.name == "copy_one":
+             description = """Copies out the next buffered instruction without advancing the
+      * output cursor, allowing the same instruction to be written out
+@@ -2925,14 +2925,14 @@ def generate_class_api_reference(name, arch, flavor, api):
+                 description += """,
+     but without a label for internal use. This breaks relocation of branches to
+     locations inside the relocated range, and is an optimization for use-cases
+-    where all branches are rewritten (e.g. Frida's Stalker)."""
++    where all branches are rewritten (e.g. Jprobe's Stalker)."""
+         elif method.name.startswith("write_one"):
+             description = "write the next buffered instruction"
+             if method.name.endswith("_no_label"):
+                 description += """, but without a
+     label for internal use. This breaks relocation of branches to locations
+     inside the relocated range, and is an optimization for use-cases where all
+-    branches are rewritten (e.g. Frida's Stalker)."""
++    branches are rewritten (e.g. Jprobe's Stalker)."""
+         elif method.name == "copy_one":
+             description = """copy out the next buffered instruction without advancing the
+     output cursor, allowing the same instruction to be written out multiple
+diff --git a/bindings/gumjs/guminspectorserver.c b/bindings/gumjs/guminspectorserver.c
+index 27fbc8a..5c637c2 100644
+--- a/bindings/gumjs/guminspectorserver.c
++++ b/bindings/gumjs/guminspectorserver.c
+@@ -316,13 +316,13 @@ gum_inspector_server_on_list (SoupServer * server,
+   json_builder_add_string_value (builder, self->title);
+ 
+   json_builder_set_member_name (builder, "description");
+-  json_builder_add_string_value (builder, "Frida Agent");
++  json_builder_add_string_value (builder, "Jprobe Agent");
+ 
+   json_builder_set_member_name (builder, "url");
+   json_builder_add_string_value (builder, "file://");
+ 
+   json_builder_set_member_name (builder, "faviconUrl");
+-  json_builder_add_string_value (builder, "https://frida.re/favicon.ico");
++  json_builder_add_string_value (builder, "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%232c7a7b%22/%3E%3Ctext x=%228%22 y=%2225%22 font-family=%22monospace%22 font-size=%2226%22 fill=%22white%22%3EJ%3C/text%3E%3C/svg%3E");
+ 
+   json_builder_set_member_name (builder, "type");
+   json_builder_add_string_value (builder, "node");
+@@ -389,7 +389,7 @@ gum_inspector_server_on_version (SoupServer * server,
+   json_builder_begin_object (builder);
+ 
+   json_builder_set_member_name (builder, "Browser");
+-  json_builder_add_string_value (builder, "Frida/v" FRIDA_VERSION);
++  json_builder_add_string_value (builder, "Jprobe/v" JPROBE_VERSION);
+ 
+   json_builder_set_member_name (builder, "Protocol-Version");
+   json_builder_add_string_value (builder, "1.1");
+diff --git a/bindings/gumjs/gumquickapi.c b/bindings/gumjs/gumquickapi.c
+index 7dde7a9..2fbde99 100644
+--- a/bindings/gumjs/gumquickapi.c
++++ b/bindings/gumjs/gumquickapi.c
+@@ -90,7 +90,7 @@ gum_quick_api_run_prelude (GumQuickApi * self,
+   if (source == NULL)
+     return;
+ 
+-  name = g_strconcat ("/_frida_", _gum_script_api_get_name (api), ".js", NULL);
++  name = g_strconcat ("/_jprobe_", _gum_script_api_get_name (api), ".js", NULL);
+ 
+   result = JS_Eval (ctx, source, strlen (source), name,
+       JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT);
+diff --git a/bindings/gumjs/gumquickcompile.c b/bindings/gumjs/gumquickcompile.c
+index c62d239..67faab8 100644
+--- a/bindings/gumjs/gumquickcompile.c
++++ b/bindings/gumjs/gumquickcompile.c
+@@ -37,7 +37,7 @@ main (int argc,
+   JSContext * ctx = NULL;
+   JSValue val = JS_NULL;
+ 
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   glib_init ();
+ #endif
+ 
+@@ -163,7 +163,7 @@ gum_es_name_from_filesystem_path (const char * path)
+ 
+   parts = g_strsplit (path, dir_sep, 0);
+   g_free (parts[0]);
+-  parts[0] = g_strdup ("frida/runtime");
++  parts[0] = g_strdup ("jprobe/runtime");
+ 
+   rel_name = g_strjoinv ("/", parts);
+   name = g_strconcat ("/", rel_name, NULL);
+diff --git a/bindings/gumjs/gumquickcore.c b/bindings/gumjs/gumquickcore.c
+index 3af86da..cea644d 100644
+--- a/bindings/gumjs/gumquickcore.c
++++ b/bindings/gumjs/gumquickcore.c
+@@ -201,7 +201,7 @@ GUMJS_DECLARE_FUNCTION (gumjs_set_unhandled_exception_callback)
+ GUMJS_DECLARE_FUNCTION (gumjs_set_incoming_message_callback)
+ GUMJS_DECLARE_FUNCTION (gumjs_wait_for_event)
+ 
+-GUMJS_DECLARE_GETTER (gumjs_frida_get_heap_size)
++GUMJS_DECLARE_GETTER (gumjs_jprobe_get_heap_size)
+ 
+ GUMJS_DECLARE_FUNCTION (gumjs_script_evaluate)
+ GUMJS_DECLARE_FUNCTION (gumjs_script_load)
+@@ -473,10 +473,10 @@ static const JSCFunctionListEntry gumjs_root_entries[] =
+   JS_CFUNC_DEF ("_waitForEvent", 0, gumjs_wait_for_event),
+ };
+ 
+-static const JSCFunctionListEntry gumjs_frida_entries[] =
++static const JSCFunctionListEntry gumjs_jprobe_entries[] =
+ {
+-  JS_PROP_STRING_DEF ("version", FRIDA_VERSION, JS_PROP_C_W_E),
+-  JS_CGETSET_DEF ("heapSize", gumjs_frida_get_heap_size, NULL),
++  JS_PROP_STRING_DEF ("version", JPROBE_VERSION, JS_PROP_C_W_E),
++  JS_CGETSET_DEF ("heapSize", gumjs_jprobe_get_heap_size, NULL),
+ };
+ 
+ static const JSCFunctionListEntry gumjs_script_entries[] =
+@@ -1630,9 +1630,9 @@ _gum_quick_core_init (GumQuickCore * self,
+       G_N_ELEMENTS (gumjs_root_entries));
+ 
+   obj = JS_NewObject (ctx);
+-  JS_SetPropertyFunctionList (ctx, obj, gumjs_frida_entries,
+-      G_N_ELEMENTS (gumjs_frida_entries));
+-  JS_DefinePropertyValueStr (ctx, ns, "Frida", obj, JS_PROP_C_W_E);
++  JS_SetPropertyFunctionList (ctx, obj, gumjs_jprobe_entries,
++      G_N_ELEMENTS (gumjs_jprobe_entries));
++  JS_DefinePropertyValueStr (ctx, ns, "Jprobe", obj, JS_PROP_C_W_E);
+ 
+   obj = JS_NewObject (ctx);
+   JS_SetPropertyFunctionList (ctx, obj, gumjs_script_entries,
+@@ -2314,7 +2314,7 @@ _gum_quick_scope_leave (GumQuickScope * self)
+   _gum_quick_stalker_process_pending (core->stalker, self);
+ }
+ 
+-GUMJS_DEFINE_GETTER (gumjs_frida_get_heap_size)
++GUMJS_DEFINE_GETTER (gumjs_jprobe_get_heap_size)
+ {
+   return JS_NewUint32 (ctx, gum_peek_private_memory_usage ());
+ }
+diff --git a/bindings/gumjs/gumquickscript.c b/bindings/gumjs/gumquickscript.c
+index 9a251ab..8a18b54 100644
+--- a/bindings/gumjs/gumquickscript.c
++++ b/bindings/gumjs/gumquickscript.c
+@@ -1593,7 +1593,7 @@ gum_quick_worker_on_runtime_loaded (JSValue error,
+         self->asset->name);
+ 
+     val = JS_Eval (ctx, init_code, strlen (init_code),
+-        "/_frida_worker_runtime.js",
++        "/_jprobe_worker_runtime.js",
+         JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_STRICT);
+     if (!JS_IsException (val))
+       self->state = GUM_WORKER_RUNNING;
+diff --git a/bindings/gumjs/gumquickscriptbackend.c b/bindings/gumjs/gumquickscriptbackend.c
+index a976ec1..0c0d66f 100644
+--- a/bindings/gumjs/gumquickscriptbackend.c
++++ b/bindings/gumjs/gumquickscriptbackend.c
+@@ -1221,7 +1221,7 @@ gum_es_program_new (void)
+     gchar * name;
+     GumESAsset * asset;
+ 
+-    name = g_strconcat ("/frida/runtime/", cur->name, NULL);
++    name = g_strconcat ("/jprobe/runtime/", cur->name, NULL);
+     asset = gum_es_asset_new (name, cur->bytecode, cur->bytecode_size, NULL);
+ 
+     if (program->runtime == NULL)
+diff --git a/bindings/gumjs/gumv8core.cpp b/bindings/gumjs/gumv8core.cpp
+index ce57759..ef31734 100644
+--- a/bindings/gumjs/gumv8core.cpp
++++ b/bindings/gumjs/gumv8core.cpp
+@@ -222,7 +222,7 @@ GUMJS_DECLARE_FUNCTION (gumjs_wait_for_event)
+ static Intercepted gumjs_global_get (Local<Name> property,
+     const PropertyCallbackInfo<Value> & info);
+ 
+-GUMJS_DECLARE_GETTER (gumjs_frida_get_heap_size)
++GUMJS_DECLARE_GETTER (gumjs_jprobe_get_heap_size)
+ 
+ GUMJS_DECLARE_FUNCTION (gumjs_script_evaluate)
+ GUMJS_DECLARE_FUNCTION (gumjs_script_load)
+@@ -466,9 +466,9 @@ static const GumV8Function gumjs_global_functions[] =
+   { NULL, NULL }
+ };
+ 
+-static const GumV8Property gumjs_frida_values[] =
++static const GumV8Property gumjs_jprobe_values[] =
+ {
+-  { "heapSize", gumjs_frida_get_heap_size, NULL },
++  { "heapSize", gumjs_jprobe_get_heap_size, NULL },
+ 
+   { NULL, NULL }
+ };
+@@ -657,10 +657,10 @@ _gum_v8_core_init (GumV8Core * self,
+         (int) PropertyHandlerFlags::kOnlyInterceptStrings
+       )));
+ 
+-  auto frida = _gum_v8_create_module ("Frida", scope, isolate);
+-  _gum_v8_module_add (module, frida, gumjs_frida_values, isolate);
++  auto frida = _gum_v8_create_module ("Jprobe", scope, isolate);
++  _gum_v8_module_add (module, frida, gumjs_jprobe_values, isolate);
+   frida->Set (_gum_v8_string_new_ascii (isolate, "version"),
+-      _gum_v8_string_new_ascii (isolate, FRIDA_VERSION), ReadOnly);
++      _gum_v8_string_new_ascii (isolate, JPROBE_VERSION), ReadOnly);
+ 
+   auto script_module = _gum_v8_create_module ("Script", scope, isolate);
+   _gum_v8_module_add (module, script_module, gumjs_script_functions, isolate);
+@@ -1779,7 +1779,7 @@ gumjs_global_get (Local<Name> property,
+   return Intercepted::kYes;
+ }
+ 
+-GUMJS_DEFINE_GETTER (gumjs_frida_get_heap_size)
++GUMJS_DEFINE_GETTER (gumjs_jprobe_get_heap_size)
+ {
+   info.GetReturnValue ().Set (gum_peek_private_memory_usage ());
+ }
+diff --git a/bindings/gumjs/gumv8script.cpp b/bindings/gumjs/gumv8script.cpp
+index 835cf3f..842bc52 100644
+--- a/bindings/gumjs/gumv8script.cpp
++++ b/bindings/gumjs/gumv8script.cpp
+@@ -2151,7 +2151,7 @@ gum_es_program_new (void)
+ 
+   for (auto cur = gumjs_runtime_modules; cur->name != NULL; cur++)
+   {
+-    auto name = g_strconcat ("/frida/runtime/", cur->name,
++    auto name = g_strconcat ("/jprobe/runtime/", cur->name,
+         (const gchar *) NULL);
+     auto asset = gum_es_asset_new (name, cur->source_code,
+         strlen (cur->source_code), NULL);
+diff --git a/bindings/gumjs/gumv8scriptbackend.cpp b/bindings/gumjs/gumv8scriptbackend.cpp
+index 329e644..4a6f542 100644
+--- a/bindings/gumjs/gumv8scriptbackend.cpp
++++ b/bindings/gumjs/gumv8scriptbackend.cpp
+@@ -229,7 +229,7 @@ gum_v8_script_backend_get_platform (GumV8ScriptBackend * self)
+       g_string_append (flags, " --jitless");
+     }
+ 
+-    const gchar * extra_flags = g_getenv ("FRIDA_V8_EXTRA_FLAGS");
++    const gchar * extra_flags = g_getenv ("JPROBE_V8_EXTRA_FLAGS");
+     if (extra_flags != NULL)
+     {
+       g_string_append_c (flags, ' ');
+diff --git a/bindings/gumjs/meson.build b/bindings/gumjs/meson.build
+index 27035f2..ac9ebe3 100644
+--- a/bindings/gumjs/meson.build
++++ b/bindings/gumjs/meson.build
+@@ -241,7 +241,7 @@ gumjs_deps = [
+ ]
+ 
+ gumjs = library('frida-gumjs-' + api_version, gumjs_sources,
+-  c_args: frida_component_cflags,
++  c_args: jprobe_component_cflags,
+   override_options: [
+     'cpp_std=c++20',
+     'cpp_eh=none',
+@@ -266,7 +266,7 @@ gumjs_dep = declare_dependency(link_with: gumjs,
+ pkg = import('pkgconfig')
+ pkg.generate(filebase: 'frida-gumjs-' + api_version,
+   name: 'GumJS',
+-  version: frida_version,
++  version: jprobe_version,
+   description: 'Gum JavaScript bindings',
+   requires: ['frida-gum-' + api_version, 'gio-2.0', 'json-glib-1.0'],
+   requires_private: ['libffi', 'capstone'] + gumjs_extra_requires,
+@@ -297,7 +297,7 @@ if have_inspector
+   ]
+ 
+   gumjs_inspector = library('frida-gumjs-inspector-' + api_version, gumjs_inspector_sources,
+-    c_args: frida_component_cflags,
++    c_args: jprobe_component_cflags,
+     dependencies: gumjs_inspector_deps,
+     install: true,
+   )
+@@ -309,7 +309,7 @@ if have_inspector
+ 
+   pkg.generate(filebase: 'frida-gumjs-inspector-' + api_version,
+     name: 'GumJS Inspector',
+-    version: frida_version,
++    version: jprobe_version,
+     description: 'GumJS Inspector components',
+     subdirs: install_header_basedir,
+     libraries: [gumjs_inspector],
+diff --git a/bindings/gumjs/runtime/message-dispatcher.js b/bindings/gumjs/runtime/message-dispatcher.js
+index 50afbb7..ff0654f 100644
+--- a/bindings/gumjs/runtime/message-dispatcher.js
++++ b/bindings/gumjs/runtime/message-dispatcher.js
+@@ -21,7 +21,7 @@ export function MessageDispatcher() {
+ 
+   function handleMessage(rawMessage, data) {
+     const message = JSON.parse(rawMessage);
+-    if (message instanceof Array && message[0] === 'frida:rpc') {
++    if (message instanceof Array && message[0] === 'jprobe:rpc') {
+       handleRpcMessage(message[1], message[2], message.slice(3), data);
+     } else {
+       messages.push([message, data]);
+@@ -66,11 +66,11 @@ export function MessageDispatcher() {
+   function reply(id, type, result, params = []) {
+     if (Array.isArray(result) && result.length === 2 && result[1] instanceof ArrayBuffer) {
+       const [value, data] = result;
+-      send(['frida:rpc', id, type, undefined, value, ...params], data);
++      send(['jprobe:rpc', id, type, undefined, value, ...params], data);
+     } else if (result instanceof ArrayBuffer) {
+-      send(['frida:rpc', id, type, undefined, ...params], result);
++      send(['jprobe:rpc', id, type, undefined, ...params], result);
+     } else {
+-      send(['frida:rpc', id, type, result, ...params]);
++      send(['jprobe:rpc', id, type, result, ...params]);
+     }
+   }
+ 
+diff --git a/bindings/gumjs/runtime/worker.js b/bindings/gumjs/runtime/worker.js
+index 242d639..17f7143 100644
+--- a/bindings/gumjs/runtime/worker.js
++++ b/bindings/gumjs/runtime/worker.js
+@@ -28,7 +28,7 @@ export class Worker {
+ 
+     const {payload} = message;
+ 
+-    if (Array.isArray(payload) && payload[0] === 'frida:rpc') {
++    if (Array.isArray(payload) && payload[0] === 'jprobe:rpc') {
+       const [, id, operation, ...params] = payload;
+       this._onRpcMessage(id, operation, params, data);
+       return;
+@@ -50,7 +50,7 @@ export class Worker {
+           reject(error);
+       });
+ 
+-      this.post(['frida:rpc', id, operation].concat(params));
++      this.post(['jprobe:rpc', id, operation].concat(params));
+     });
+   }
+ 
+diff --git a/bindings/gumpp/meson.build b/bindings/gumpp/meson.build
+index 461c08c..bf9e77c 100644
+--- a/bindings/gumpp/meson.build
++++ b/bindings/gumpp/meson.build
+@@ -29,7 +29,7 @@ endif
+ install_headers(gumpp_headers, subdir: install_header_basedir / 'gumpp')
+ 
+ gumpp = shared_library('frida-gumpp-' + api_version, gumpp_sources,
+-  c_args: frida_component_cflags,
++  c_args: jprobe_component_cflags,
+   override_options: [
+     'cpp_std=c++14',
+     'cpp_eh=default',
+@@ -49,7 +49,7 @@ gumpp_dep = declare_dependency(link_with: gumpp,
+ pkg = import('pkgconfig')
+ pkg.generate(filebase: 'frida-gumpp-' + api_version,
+   name: 'Gum++',
+-  version: frida_version,
++  version: jprobe_version,
+   description: 'Gum C++ bindings',
+   requires_private: ['frida-gum-' + api_version],
+   subdirs: install_header_basedir,
+diff --git a/ext/dbghelp/meson.build b/ext/dbghelp/meson.build
+index 30d590d..ec01315 100644
+--- a/ext/dbghelp/meson.build
++++ b/ext/dbghelp/meson.build
+@@ -1,4 +1,4 @@
+-dbghelp_prefix = get_option('prefix') / get_option('libdir') / 'frida'
++dbghelp_prefix = get_option('prefix') / get_option('libdir') / 'jprobe'
+ uninstalled_dbghelp_prefix = meson.current_source_dir()
+ 
+ if host_os_family == 'windows'
+diff --git a/ext/symsrv/meson.build b/ext/symsrv/meson.build
+index 0fdb4c4..f8a7205 100644
+--- a/ext/symsrv/meson.build
++++ b/ext/symsrv/meson.build
+@@ -1,4 +1,4 @@
+-symsrv_prefix = get_option('prefix') / get_option('libdir') / 'frida'
++symsrv_prefix = get_option('prefix') / get_option('libdir') / 'jprobe'
+ uninstalled_symsrv_prefix = meson.current_source_dir()
+ 
+ if host_os_family == 'windows'
+diff --git a/gum/backend-arm64/guminterceptor-arm64.c b/gum/backend-arm64/guminterceptor-arm64.c
+index 743664d..a57a600 100644
+--- a/gum/backend-arm64/guminterceptor-arm64.c
++++ b/gum/backend-arm64/guminterceptor-arm64.c
+@@ -573,7 +573,7 @@ gum_enumerate_grafted_segment_pairs (gconstpointer mach_header,
+       {
+         slide = (guint8 *) mach_header - (guint8 *) sc->vmaddr;
+       }
+-      else if (g_str_has_prefix (sc->segname, "__FRIDA_DATA"))
++      else if (g_str_has_prefix (sc->segname, "__JPROBE_DATA"))
+       {
+         GumGraftedHeader * header = GSIZE_TO_POINTER (sc->vmaddr + slide);
+ 
+@@ -1410,7 +1410,11 @@ gum_thunk_set_new (GumInterceptorBackend * backend,
+ 
+   protection = gum_memory_can_remap_writable () ? GUM_PAGE_RX : GUM_PAGE_RW;
+ 
++#ifdef HAVE_ANDROID
++  page = gum_memory_allocate_shared_code (code_size, protection);
++#else
+   page = gum_memory_allocate (NULL, code_size, page_size, protection);
++#endif
+   if (page == NULL)
+     return NULL;
+ 
+diff --git a/gum/backend-arm64/gumstalker-arm64.c b/gum/backend-arm64/gumstalker-arm64.c
+index 33676ba..c98fc86 100644
+--- a/gum/backend-arm64/gumstalker-arm64.c
++++ b/gum/backend-arm64/gumstalker-arm64.c
+@@ -3155,7 +3155,7 @@ gum_exec_ctx_write_prolog_helper (GumExecCtx * ctx,
+   /*
+    * Our prolog and epilog code makes extensive use of the stack to store and
+    * restore registers. However, on AArch64, the stack pointer must be aligned
+-   * to a 16-byte boundary when it is used to access memory. One anti-Frida
++   * to a 16-byte boundary when it is used to access memory. One anti-Jprobe
+    * technique observed in the wild has been to deliberately misalign the stack
+    * pointer to violate this assumption and cause Stalker to attempt to access
+    * data on a misaligned stack.
+@@ -3636,10 +3636,10 @@ gum_exec_ctx_load_real_register_from_full_frame_into (GumExecCtx * ctx,
+ 
+ /*
+  * This exception handler deals with exceptions caused by attempts to access the
+- * stack when it isn't 16-byte aligned. Anti-Frida techniques have been observed
++ * stack when it isn't 16-byte aligned. Anti-Jprobe techniques have been observed
+  * in the wild where the stack is deliberately misaligned to cause Stalker to
+  * crash when it executes. Since an exception is only thrown when an attempt is
+- * made to load or store from a misaligned stack pointer, this anti-Frida code
++ * made to load or store from a misaligned stack pointer, this anti-Jprobe code
+  * can misalign the stack and cause a branch without accessing stack data and
+  * hence therefore force FRIDA to deal with a misaligned stack without
+  * incurring any exceptions itself.
+diff --git a/gum/backend-darwin/gummachomapper.c b/gum/backend-darwin/gummachomapper.c
+index bf0d580..bcd9a75 100644
+--- a/gum/backend-darwin/gummachomapper.c
++++ b/gum/backend-darwin/gummachomapper.c
+@@ -1085,7 +1085,7 @@ gum_macho_mapper_alloc_and_emit_runtime (GumMachoMapper * self,
+ 
+   strv_offsets[0] = 0;
+   g_string_append_printf (strv_blob,
+-      "frida_dylib_range=0x%" G_GINT64_MODIFIER "x,0x%" G_GSIZE_MODIFIER "x",
++      "jprobe_dylib_range=0x%" G_GINT64_MODIFIER "x,0x%" G_GSIZE_MODIFIER "x",
+       base_address, size);
+ 
+   for (i = 0; i != params->len; i++)
+diff --git a/gum/backend-elf/gummodule-elf.c b/gum/backend-elf/gummodule-elf.c
+index 8e5dcae..2172255 100644
+--- a/gum/backend-elf/gummodule-elf.c
++++ b/gum/backend-elf/gummodule-elf.c
+@@ -600,7 +600,22 @@ gum_try_resolve_export_by_name (const GumExportDetails * details,
+ GumAddress
+ gum_module_find_global_export_by_name (const gchar * symbol_name)
+ {
+-  return gum_dlsym (RTLD_DEFAULT, symbol_name);
++  GumAddress address = gum_dlsym (RTLD_DEFAULT, symbol_name);
++
++#ifdef HAVE_ANDROID
++  if (address == 0)
++  {
++    gpointer libc = dlopen ("libc.so", RTLD_NOW | RTLD_LOCAL);
++    if (libc != NULL)
++    {
++      /* Preserve normal lookup precedence; only fall back to bionic. */
++      address = GUM_ADDRESS (dlsym (libc, symbol_name));
++      dlclose (libc);
++    }
++  }
++#endif
++
++  return address;
+ }
+ 
+ static GumAddress
+diff --git a/gum/backend-linux/gummoduleregistry-linux.c b/gum/backend-linux/gummoduleregistry-linux.c
+index fab7cf5..1bfad61 100644
+--- a/gum/backend-linux/gummoduleregistry-linux.c
++++ b/gum/backend-linux/gummoduleregistry-linux.c
+@@ -865,6 +865,16 @@ gum_read_auxv_from_stack (void)
+   const ElfW(auxv_t) * cursor, * auxv_start, * auxv_end;
+   gsize page_size;
+ 
++#ifdef JPROBE_DIAGNOSTIC_KERNEL_AUXV
++  return NULL;
++#endif
++#ifdef __clang__
++# if __has_feature (address_sanitizer)
++  /* Stack probing reads sanitizer redzones; use the kernel auxv in this build. */
++  return NULL;
++# endif
++#endif
++
+   if (!gum_query_main_thread_stack_range (&stack))
+     return NULL;
+   stack_start = GSIZE_TO_POINTER (stack.base_address);
+diff --git a/gum/backend-linux/gumprocess-linux.c b/gum/backend-linux/gumprocess-linux.c
+index dafd0bd..2fbe3e6 100644
+--- a/gum/backend-linux/gumprocess-linux.c
++++ b/gum/backend-linux/gumprocess-linux.c
+@@ -1278,7 +1278,25 @@ gum_try_init_libc_info (void)
+ #endif
+   {
+     if (!gum_try_resolve_dynamic_symbol ("exit", &gum_libc_info))
++    {
++#ifdef HAVE_ANDROID
++      gpointer libc;
++      gpointer address;
++      gboolean found;
++
++      /* A mapped agent may not be in the caller's linker lookup scope. */
++      libc = dlopen ("libc.so", RTLD_NOW | RTLD_LOCAL);
++      if (libc == NULL)
++        return NULL;
++      address = dlsym (libc, "exit");
++      found = address != NULL && dladdr (address, &gum_libc_info) != 0;
++      dlclose (libc);
++      if (!found)
++        return NULL;
++#else
+       return NULL;
++#endif
++    }
+   }
+ 
+   return &gum_libc_info;
+diff --git a/gum/backend-posix/gummemory-posix.c b/gum/backend-posix/gummemory-posix.c
+index d5de607..3db3955 100644
+--- a/gum/backend-posix/gummemory-posix.c
++++ b/gum/backend-posix/gummemory-posix.c
+@@ -12,6 +12,9 @@
+ #include <errno.h>
+ #include <unistd.h>
+ #include <sys/mman.h>
++#ifdef HAVE_ANDROID
++# include <sys/syscall.h>
++#endif
+ #ifdef HAVE_PROSPERO
+ # include <ps5/kernel.h>
+ #endif
+@@ -78,6 +81,27 @@ gum_memory_allocate (gpointer address,
+   return gum_memory_allocate_internal (address, size, alignment, prot, 0);
+ }
+ 
++#ifdef HAVE_ANDROID
++gpointer
++gum_memory_allocate_shared_code (gsize size,
++                                 GumPageProtection prot)
++{
++  gpointer result = MAP_FAILED;
++  int fd = syscall (__NR_memfd_create, "jprobe-code", 1U);
++
++  if (fd != -1)
++  {
++    if (ftruncate (fd, size) == 0)
++      result = mmap (NULL, size, _gum_page_protection_to_posix (prot),
++          MAP_SHARED, fd, 0);
++    close (fd);
++  }
++
++  return (result != MAP_FAILED) ? result :
++      gum_memory_allocate (NULL, size, gum_query_page_size (), prot);
++}
++#endif
++
+ static gpointer
+ gum_memory_allocate_internal (gpointer address,
+                               gsize size,
+@@ -237,6 +261,25 @@ gum_allocate_page_aligned (gpointer address,
+   }
+ #endif
+ 
++#ifdef HAVE_ANDROID
++  if ((prot & PROT_EXEC) != 0 && extra_flags == 0)
++  {
++    int fd = syscall (__NR_memfd_create, "jprobe-code", 1U);
++    if (fd != -1)
++    {
++      if (ftruncate (fd, size) == 0)
++      {
++        result = mmap (address, size, prot, MAP_SHARED, fd, 0);
++        close (fd);
++        if (result != MAP_FAILED)
++          return result;
++      }
++      else
++        close (fd);
++    }
++  }
++#endif
++
+   result = mmap (address, size, prot, base_flags | region_flags, -1, 0);
+ 
+ #ifdef HAVE_PROSPERO
+diff --git a/gum/devkit/meson.build b/gum/devkit/meson.build
+index 1cdb5d9..be28c72 100644
+--- a/gum/devkit/meson.build
++++ b/gum/devkit/meson.build
+@@ -22,5 +22,5 @@ custom_target('gum-devkit',
+     meson.current_build_dir(),
+   ] + devkit_options,
+   install: true,
+-  install_dir: get_option('libdir') / frida_libdir_name / 'devkits' / 'gum'
++  install_dir: get_option('libdir') / jprobe_libdir_name / 'devkits' / 'gum'
+ )
+diff --git a/gum/gum.c b/gum/gum.c
+index 1a427a4..49ffa0c 100644
+--- a/gum/gum.c
++++ b/gum/gum.c
+@@ -32,7 +32,7 @@
+ #ifdef HAVE_WINDOWS
+ # include <windows.h>
+ #endif
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_LIBFFI)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_LIBFFI)
+ # include <ffi.h>
+ #endif
+ #ifdef HAVE_DARWIN
+@@ -52,11 +52,11 @@ struct _GumInternalThreadDetails
+ 
+ static void gum_destructor_invoke (GumDestructorFunc destructor);
+ 
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_LIBFFI)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_LIBFFI)
+ static void gum_on_ffi_allocate (void * base_address, size_t size);
+ static void gum_on_ffi_deallocate (void * base_address, size_t size);
+ #endif
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+ static void gum_on_thread_init (void);
+ static void gum_on_thread_realize (void);
+ static void gum_on_thread_dispose (void);
+@@ -130,7 +130,7 @@ static gboolean gum_initialized = FALSE;
+ static GSList * gum_early_destructors = NULL;
+ static GSList * gum_final_destructors = NULL;
+ 
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+ static GPrivate gum_internal_thread_details_key = G_PRIVATE_INIT (
+     (GDestroyNotify) gum_internal_thread_details_free);
+ #endif
+@@ -192,7 +192,7 @@ gum_do_init (void)
+   };
+ #endif
+ 
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   glib_init ();
+   gobject_init ();
+ #endif
+@@ -229,7 +229,7 @@ gum_destructor_invoke (GumDestructorFunc destructor)
+ void
+ gum_init_embedded (void)
+ {
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_LIBFFI)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_LIBFFI)
+   ffi_mem_callbacks ffi_callbacks = {
+     (void * (*) (size_t)) gum_malloc,
+     (void * (*) (size_t, size_t)) gum_calloc,
+@@ -238,7 +238,7 @@ gum_init_embedded (void)
+     gum_on_ffi_deallocate
+   };
+ #endif
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   GThreadCallbacks thread_callbacks = {
+     gum_on_thread_init,
+     gum_on_thread_realize,
+@@ -250,7 +250,7 @@ gum_init_embedded (void)
+     gum_on_fd_closed
+   };
+ #endif
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_GLIB) && \
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_GLIB) && \
+     !DEBUG_HEAP_LEAKS && !defined (HAVE_ASAN)
+   GMemVTable mem_vtable = {
+     gum_malloc,
+@@ -286,10 +286,10 @@ gum_init_embedded (void)
+ #endif
+ 
+   gum_internal_heap_ref ();
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_LIBFFI)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_LIBFFI)
+   ffi_set_mem_callbacks (&ffi_callbacks);
+ #endif
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   g_thread_set_callbacks (&thread_callbacks);
+   g_platform_audit_set_fd_callbacks (&fd_callbacks);
+ #endif
+@@ -300,20 +300,20 @@ gum_init_embedded (void)
+   }
+   else
+   {
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_GLIB)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_GLIB)
+     g_mem_set_vtable (&mem_vtable);
+ #endif
+   }
+ #else
+   g_setenv ("G_SLICE", "always-malloc", TRUE);
+ #endif
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   glib_init ();
+ #endif
+   g_log_set_default_handler (gum_on_log_message, NULL);
+   gum_do_init ();
+ 
+-  g_set_prgname ("frida");
++  g_set_prgname ("jprobe");
+ 
+ #if defined (HAVE_LINUX) && defined (HAVE_GLIBC)
+   gum_libdl_prevent_unload ();
+@@ -328,17 +328,17 @@ gum_deinit_embedded (void)
+   g_assert (gum_initialized);
+ 
+   gum_shutdown ();
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   glib_shutdown ();
+ #endif
+ 
+   g_clear_object (&gum_cached_interceptor);
+ 
+   gum_deinit ();
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   glib_deinit ();
+ #endif
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_LIBFFI)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_LIBFFI)
+   ffi_deinit ();
+ #endif
+   gum_internal_heap_unref ();
+@@ -364,7 +364,7 @@ gum_recover_from_fork_in_child (void)
+   _gum_exceptor_backend_recover_from_fork_in_child ();
+ }
+ 
+-#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_FRIDA_LIBFFI)
++#if !defined (GUM_USE_SYSTEM_ALLOC) && defined (HAVE_JPROBE_LIBFFI)
+ 
+ static void
+ gum_on_ffi_allocate (void * base_address,
+@@ -388,7 +388,7 @@ gum_on_ffi_deallocate (void * base_address,
+ 
+ #endif
+ 
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+ 
+ static void
+ gum_on_thread_init (void)
+diff --git a/gum/gumcloak.c b/gum/gumcloak.c
+index 748a290..279497d 100644
+--- a/gum/gumcloak.c
++++ b/gum/gumcloak.c
+@@ -16,7 +16,7 @@
+  *
+  * If you use [func@Gum.init_embedded] to initialize Gum, any resources created
+  * by libffi and GLib will be cloaked automatically. (Assuming that Gum was
+- * built with Frida's versions of these two libraries.)
++ * built with Jprobe's versions of these two libraries.)
+  *
+  * This means you typically only need to manage cloaked resources if you use a
+  * non-GLib API to create a given resource.
+@@ -798,7 +798,7 @@ gum_cloak_is_locked (void)
+ # include <unistd.h>
+ # include <sys/syscall.h>
+ 
+-/* Must match FRIDA_CONTROL_{MAGIC,TOKEN} in the Frida kernel module. */
++/* Must match JPROBE_CONTROL_{MAGIC,TOKEN} in the Jprobe kernel module. */
+ # define GUM_KERNEL_CLOAK_MAGIC 0x46524944
+ # define GUM_KERNEL_CLOAK_TOKEN 0x1d5f9e6b2c7a4038ULL
+ 
+diff --git a/gum/gumcmodule.c b/gum/gumcmodule.c
+index a26ad62..b53ed29 100644
+--- a/gum/gumcmodule.c
++++ b/gum/gumcmodule.c
+@@ -478,8 +478,8 @@ gum_tcc_cmodule_new (const gchar * source,
+   tcc_set_options (state,
+       "-Wall "
+       "-Werror "
+-      "-isystem /frida "
+-      "-isystem /frida/capstone "
++      "-isystem /jprobe "
++      "-isystem /jprobe/capstone "
+       "-nostdinc "
+       "-nostdlib"
+   );
+@@ -563,7 +563,11 @@ gum_tcc_cmodule_load (GumCModule * cm,
+ 
+   protection = gum_memory_can_remap_writable () ? GUM_PAGE_RX : GUM_PAGE_RW;
+ 
++#ifdef HAVE_ANDROID
++  base = gum_memory_allocate_shared_code (size, protection);
++#else
+   base = gum_memory_allocate (NULL, size, page_size, protection);
++#endif
+ 
+   if (!gum_tcc_cmodule_relocate (self, base))
+     goto relocation_failed;
+@@ -698,8 +702,8 @@ gum_tcc_cmodule_load_header (void * opaque,
+   guint i;
+ 
+   name = path;
+-  if (g_str_has_prefix (name, "/frida/"))
+-    name += 7;
++  if (g_str_has_prefix (name, "/jprobe/"))
++    name += sizeof ("/jprobe/") - 1;
+ 
+   for (i = 0; i != G_N_ELEMENTS (gum_cmodule_headers); i++)
+   {
+@@ -1239,7 +1243,7 @@ gum_external_cmodule_build (GumExternalCModule * self,
+   gchar * def_path;
+   gchar * cl_path;
+ 
+-  def = g_string_new ("LIBRARY frida-cmodule-runtime.dll\nEXPORTS\n");
++  def = g_string_new ("LIBRARY jprobe-cmodule-runtime.dll\nEXPORTS\n");
+   g_hash_table_foreach (gum_cmodule_get_symbols (), gum_append_export, def);
+   g_hash_table_foreach (self->symbols, gum_append_export, def);
+ 
+diff --git a/gum/gumdarwingrafter.c b/gum/gumdarwingrafter.c
+index 9ab2d87..aff4889 100644
+--- a/gum/gumdarwingrafter.c
++++ b/gum/gumdarwingrafter.c
+@@ -383,7 +383,7 @@ gum_darwin_grafter_graft (GumDarwinGrafter * self,
+     const GumMachoSegment * segment =
+         &g_array_index (module->segments, GumMachoSegment, i);
+ 
+-    if (g_str_has_prefix (segment->name, "__FRIDA_"))
++    if (g_str_has_prefix (segment->name, "__JPROBE_"))
+       goto already_grafted;
+   }
+ 
+@@ -1165,7 +1165,7 @@ gum_darwin_grafter_transform_load_commands (gconstpointer commands_in,
+ 
+         seg.cmd = GUM_LC_SEGMENT_64;
+         seg.cmdsize = sizeof (seg) + sizeof (sect);
+-        g_snprintf (seg.segname, sizeof (seg.segname), "__FRIDA_TEXT%u", j);
++        g_snprintf (seg.segname, sizeof (seg.segname), "__JPROBE_TEXT%u", j);
+         seg.vmaddr = descriptor->code_address;
+         seg.vmsize = descriptor->code_size;
+         seg.fileoff = descriptor->code_offset;
+@@ -1195,7 +1195,7 @@ gum_darwin_grafter_transform_load_commands (gconstpointer commands_in,
+ 
+         seg.cmd = GUM_LC_SEGMENT_64;
+         seg.cmdsize = sizeof (seg) + sizeof (sect);
+-        g_snprintf (seg.segname, sizeof (seg.segname), "__FRIDA_DATA%u", j);
++        g_snprintf (seg.segname, sizeof (seg.segname), "__JPROBE_DATA%u", j);
+         seg.vmaddr = descriptor->data_address;
+         seg.vmsize = descriptor->data_size;
+         seg.fileoff = descriptor->data_offset;
+diff --git a/gum/gummemory.h b/gum/gummemory.h
+index ccf54ad..c59e24d 100644
+--- a/gum/gummemory.h
++++ b/gum/gummemory.h
+@@ -197,6 +197,10 @@ GUM_API void gum_free (gpointer mem);
+ 
+ GUM_API gpointer gum_memory_allocate (gpointer address, gsize size,
+     gsize alignment, GumPageProtection prot);
++#ifdef HAVE_ANDROID
++GUM_API gpointer gum_memory_allocate_shared_code (gsize size,
++    GumPageProtection prot);
++#endif
+ GUM_API gpointer gum_memory_allocate_near (const GumAddressSpec * spec,
+     gsize size, gsize alignment, GumPageProtection prot);
+ GUM_API gpointer gum_memory_allocate_bookkeeping (gsize size, gsize alignment);
+diff --git a/gum/gummoduleregistry.c b/gum/gummoduleregistry.c
+index 90cb0cb..dda7244 100644
+--- a/gum/gummoduleregistry.c
++++ b/gum/gummoduleregistry.c
+@@ -194,7 +194,7 @@ gum_deinit_module_registry (void)
+  * @n_offsets: number of entries in @offsets
+  *
+  * Overrides the dynamic-linker notifier hook location(s) used when the registry
+- * is activated. Instead of hooking the well-known notifier stub, Frida hooks the
++ * is activated. Instead of hooking the well-known notifier stub, Jprobe hooks the
+  * given call sites, each computed as the dynamic linker base plus an offset.
+  *
+  * Must be called before the first gum_module_registry_obtain(), as activation
+diff --git a/gum/meson.build b/gum/meson.build
+index 55ca5bb..04f5f16 100644
+--- a/gum/meson.build
++++ b/gum/meson.build
+@@ -470,7 +470,7 @@ if lzma_dep.found()
+ endif
+ 
+ gum = library('frida-gum-' + api_version, gum_sources + gum_enums,
+-  c_args: frida_component_cflags,
++  c_args: jprobe_component_cflags,
+   include_directories: gum_incdirs,
+   link_args: extra_libs_private,
+   dependencies: gum_internal_deps + extra_deps,
+@@ -478,15 +478,15 @@ gum = library('frida-gum-' + api_version, gum_sources + gum_enums,
+ )
+ 
+ uninstalled_variables = {
+-  'frida_vapidir': meson.project_source_root() / 'vapi',
+-  'frida_dbghelp_prefix': uninstalled_dbghelp_prefix,
+-  'frida_symsrv_prefix': uninstalled_symsrv_prefix,
++  'jprobe_vapidir': meson.project_source_root() / 'vapi',
++  'jprobe_dbghelp_prefix': uninstalled_dbghelp_prefix,
++  'jprobe_symsrv_prefix': uninstalled_symsrv_prefix,
+ }
+ 
+ installed_variables = {
+-  'frida_vapidir': get_option('prefix') / get_option('datadir') / 'vala' / 'vapi',
+-  'frida_dbghelp_prefix': dbghelp_prefix,
+-  'frida_symsrv_prefix': symsrv_prefix,
++  'jprobe_vapidir': get_option('prefix') / get_option('datadir') / 'vala' / 'vapi',
++  'jprobe_dbghelp_prefix': dbghelp_prefix,
++  'jprobe_symsrv_prefix': symsrv_prefix,
+ }
+ 
+ gum_dep = declare_dependency(link_with: gum,
+@@ -499,7 +499,7 @@ gum_dep = declare_dependency(link_with: gum,
+ 
+ if gir_scanner.found()
+   gum_introspect = executable('gum-introspect', 'gumintrospect.c',
+-    c_args: frida_component_cflags,
++    c_args: jprobe_component_cflags,
+     dependencies: [gum_dep, gir_dep],
+   )
+ 
+@@ -541,7 +541,7 @@ pkg = import('pkgconfig')
+ pkg.generate(gum,
+   filebase: 'frida-gum-' + api_version,
+   name: 'Gum',
+-  version: frida_version,
++  version: jprobe_version,
+   description: 'Low-level code instrumentation library',
+   requires: ['glib-2.0', 'gobject-2.0', 'gio-2.0', 'capstone'],
+   requires_private: [gio_os_package_name, 'json-glib-1.0'] + extra_requires_private,
+diff --git a/libs/gum/heap/meson.build b/libs/gum/heap/meson.build
+index 78d5fe1..bdfe30d 100644
+--- a/libs/gum/heap/meson.build
++++ b/libs/gum/heap/meson.build
+@@ -27,7 +27,7 @@ gum_heap_sources = [
+ install_headers(gum_heap_headers, subdir: install_header_subdir / 'heap')
+ 
+ gum_heap = library('frida-gum-heap-' + api_version, gum_heap_sources,
+-  c_args: frida_component_cflags,
++  c_args: jprobe_component_cflags,
+   include_directories: gum_incdirs,
+   dependencies: gum_dep,
+   install: true,
+@@ -38,7 +38,7 @@ gum_heap_dep = declare_dependency(link_with: gum_heap)
+ pkg = import('pkgconfig')
+ pkg.generate(filebase: 'frida-gum-heap-' + api_version,
+   name: 'GumHeap',
+-  version: frida_version,
++  version: jprobe_version,
+   description: 'Heap instrumentation library built on top of Gum',
+   requires: ['frida-gum-' + api_version],
+   subdirs: install_header_basedir,
+diff --git a/libs/gum/prof/meson.build b/libs/gum/prof/meson.build
+index 4a5e666..397db0e 100644
+--- a/libs/gum/prof/meson.build
++++ b/libs/gum/prof/meson.build
+@@ -76,7 +76,7 @@ endif
+ install_headers(gum_prof_headers, subdir: install_header_subdir / 'prof')
+ 
+ gum_prof = library('frida-gum-prof-' + api_version, gum_prof_sources,
+-  c_args: frida_component_cflags,
++  c_args: jprobe_component_cflags,
+   include_directories: gum_incdirs,
+   dependencies: [gum_dep],
+   install: true,
+@@ -87,7 +87,7 @@ gum_prof_dep = declare_dependency(link_with: gum_prof)
+ pkg = import('pkgconfig')
+ pkg.generate(filebase: 'frida-gum-prof-' + api_version,
+   name: 'GumProf',
+-  version: frida_version,
++  version: jprobe_version,
+   description: 'Profiling library built on top of Gum',
+   requires: ['frida-gum-' + api_version],
+   subdirs: install_header_basedir,
+diff --git a/meson.build b/meson.build
+index 2b54333..34b7da9 100644
+--- a/meson.build
++++ b/meson.build
+@@ -8,6 +8,21 @@ project('frida-gum', 'c', 'cpp',
+   ],
+ )
+ 
++# Cover dependencies and separate compatibility builds as well as this project.
++if not meson.is_subproject() and meson.get_compiler('c').get_id() in ['clang', 'gcc']
++  jp_fs = import('fs')
++  foreach part : ['', 'subprojects/frida-core', 'subprojects/frida-gum',
++                  'subprojects/frida-core/subprojects/frida-gum',
++                  'subprojects/frida-core/subprojects/efni']
++    actual = meson.project_source_root() / part
++    relative = jp_fs.relative_to(actual, meson.project_build_root())
++    normalized = '/src/jprobe' / part.replace('frida', 'jprobe')
++    add_global_arguments('-ffile-prefix-map=' + actual + '=' + normalized,
++                         '-ffile-prefix-map=' + relative + '=' + normalized,
++                         language: ['c', 'cpp'])
++  endforeach
++endif
++
+ python = import('python').find_installation()
+ 
+ releng = meson.global_source_root() / 'releng'
+@@ -15,9 +30,9 @@ if not import('fs').exists(releng)
+   releng = meson.project_source_root() / 'releng'
+ endif
+ 
+-frida_version = get_option('frida_version')
+-if frida_version == ''
+-  frida_version = run_command(python, releng / 'frida_version.py', meson.project_source_root(), check: true).stdout().strip()
++jprobe_version = get_option('jprobe_version')
++if jprobe_version == ''
++  jprobe_version = run_command(python, releng / 'frida_version.py', meson.project_source_root(), check: true).stdout().strip()
+ endif
+ 
+ api_version = '1.0'
+@@ -64,15 +79,16 @@ endif
+ 
+ cc = meson.get_compiler('c')
+ 
++
+ if cc.get_argument_syntax() == 'msvc' and host_arch == 'arm64'
+   add_languages('masm')
+ endif
+ 
+-frida_component_cflags = []
++jprobe_component_cflags = []
+ ndebug = get_option('b_ndebug')
+ optimize_for_prod = ndebug == 'true' or (ndebug == 'if-release' and not get_option('debug'))
+ if optimize_for_prod
+-  frida_component_cflags += [
++  jprobe_component_cflags += [
+     '-DG_DISABLE_ASSERT',
+     '-DG_DISABLE_CHECKS',
+     '-DG_DISABLE_CAST_CHECKS',
+@@ -135,7 +151,7 @@ extra_gir_args_private = []
+ 
+ cdata = configuration_data()
+ 
+-cdata.set_quoted('FRIDA_VERSION', frida_version)
++cdata.set_quoted('JPROBE_VERSION', jprobe_version)
+ 
+ static = get_option('default_library') == 'static'
+ if static
+@@ -409,15 +425,15 @@ gio_os_package_name = (host_os_family == 'windows') ? 'gio-windows-2.0' : 'gio-u
+ gio_dep = dependency('gio-2.0')
+ gio_os_package_dep = dependency(gio_os_package_name)
+ 
+-frida_glib_probe = '''
++jprobe_glib_probe = '''
+ #include <glib.h>
+-void * _frida_detect_glib_fork (void) { return (void *) g_thread_set_callbacks; }
++void * _jprobe_detect_glib_fork (void) { return (void *) g_thread_set_callbacks; }
+ '''
+ 
+ glib_dep_native = dependency('glib-2.0', version: glib_version_req, native: true, default_options: glib_options)
+ native_cc = meson.get_compiler('c', native: true)
+-if glib_dep_native.type_name() == 'internal' or native_cc.compiles(frida_glib_probe, dependencies: [glib_dep_native], name: 'Frida GLib fork (native)')
+-  add_project_arguments('-DHAVE_FRIDA_GLIB=1', language: languages, native: true)
++if glib_dep_native.type_name() == 'internal' or native_cc.compiles(jprobe_glib_probe, dependencies: [glib_dep_native], name: 'Jprobe GLib fork (native)')
++  add_project_arguments('-DHAVE_JPROBE_GLIB=1', language: languages, native: true)
+ endif
+ gio_dep_native = dependency('gio-2.0', native: true)
+ 
+@@ -518,12 +534,12 @@ if get_option('devkits').length() != 0
+   endif
+ endif
+ 
+-if glib_dep.type_name() == 'internal' or cc.compiles(frida_glib_probe, dependencies: [glib_dep], name: 'Frida GLib fork')
+-  cdata.set('HAVE_FRIDA_GLIB', 1)
++if glib_dep.type_name() == 'internal' or cc.compiles(jprobe_glib_probe, dependencies: [glib_dep], name: 'Jprobe GLib fork')
++  cdata.set('HAVE_JPROBE_GLIB', 1)
+ endif
+ 
+ if ffi_dep.found() and (ffi_dep.type_name() == 'internal' or cc.has_function('ffi_set_mem_callbacks', dependencies: [ffi_dep]))
+-  cdata.set('HAVE_FRIDA_LIBFFI', 1)
++  cdata.set('HAVE_JPROBE_LIBFFI', 1)
+ endif
+ 
+ pthread_functions = [
+@@ -736,7 +752,7 @@ configure_file(
+ 
+ add_project_arguments(
+   (cc.get_argument_syntax() == 'msvc') ? '/FI' : '-include', meson.current_build_dir() / 'config.h',
+-  '-DG_LOG_DOMAIN="Frida"',
++  '-DG_LOG_DOMAIN="Jprobe"',
+   '-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_56',
+   '-DG_DISABLE_DEPRECATED',
+   language: languages)
+@@ -814,8 +830,8 @@ if libunwind_dep.found()
+   gum_incdirs += include_directories('gum' / 'backend-libunwind' / 'include')
+ endif
+ 
+-frida_libdir_name = 'frida-' + api_version
+-install_header_basedir = frida_libdir_name
++jprobe_libdir_name = 'frida-' + api_version
++install_header_basedir = jprobe_libdir_name
+ install_header_subdir = install_header_basedir + '/gum'
+ 
+ subdir('ext')
+diff --git a/meson.options b/meson.options
+index c4478cb..92889a1 100644
+--- a/meson.options
++++ b/meson.options
+@@ -1,7 +1,7 @@
+-option('frida_version',
++option('jprobe_version',
+   type: 'string',
+   value: '',
+-  description: 'Frida version, such as 16.2.2 or 16.2.2-dev.27',
++  description: 'Jprobe version, such as 16.2.2 or 16.2.2-dev.27',
+ )
+ 
+ option('graft_tool',
+@@ -77,7 +77,7 @@ option('devkit_symbol_scope',
+   choices: ['prefixed', 'original'],
+   value: 'prefixed',
+   description : 'How devkit generation treats third-party symbols:\n'
+-                + ' - prefixed: add the \'_frida_\' prefix\n'
++                + ' - prefixed: add the \'_jprobe_\' prefix\n'
+                 + ' - original: keep symbols exactly as upstream\n'
+ )
+ 
+diff --git a/tests/core/interceptor.c b/tests/core/interceptor.c
+index efe210d..906b7b0 100644
+--- a/tests/core/interceptor.c
++++ b/tests/core/interceptor.c
+@@ -75,7 +75,7 @@ TESTLIST_BEGIN (interceptor)
+   TESTENTRY_SIMPLE ("Core/Interceptor", test_interceptor,
+       obtain_is_safe_during_teardown)
+   TESTENTRY (thread_id)
+-#if defined (HAVE_FRIDA_GLIB) && \
++#if defined (HAVE_JPROBE_GLIB) && \
+     !(defined (HAVE_ANDROID) && defined (HAVE_ARM64)) && \
+     !defined (HAVE_ASAN)
+   TESTENTRY (intercepted_free_in_thread_exit)
+@@ -112,7 +112,7 @@ TESTLIST_BEGIN (interceptor)
+   TESTENTRY (already_replaced)
+ #ifndef HAVE_ASAN
+   TESTENTRY (replace_one)
+-# ifdef HAVE_FRIDA_GLIB
++# ifdef HAVE_JPROBE_GLIB
+   TESTENTRY (replace_two)
+ # endif
+ #endif
+@@ -688,7 +688,7 @@ TESTCASE (thread_id)
+   g_assert_cmpuint (second_thread_id, !=, first_thread_id);
+ }
+ 
+-#if defined (HAVE_FRIDA_GLIB) && \
++#if defined (HAVE_JPROBE_GLIB) && \
+     !(defined (HAVE_ANDROID) && defined (HAVE_ARM64)) && \
+     !defined (HAVE_ASAN)
+ 
+@@ -1446,7 +1446,7 @@ TESTCASE (replace_one)
+   free (ret);
+ }
+ 
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+ 
+ static gpointer replacement_malloc_calling_malloc_and_replaced_free (
+     gsize size);
+diff --git a/tests/core/process.c b/tests/core/process.c
+index 73517b4..9c701fb 100644
+--- a/tests/core/process.c
++++ b/tests/core/process.c
+@@ -53,7 +53,7 @@ TESTLIST_BEGIN (process)
+   TESTENTRY (process_ranges)
+   TESTENTRY (process_ranges_exclude_cloaked)
+   TESTENTRY (thread_ranges_can_be_enumerated)
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   TESTENTRY (internal_thread_leaves_no_stack_contents_behind)
+ #ifndef HAVE_WINDOWS
+   TESTENTRY (adopted_thread_can_be_finalized)
+@@ -766,7 +766,7 @@ inspect_thread_ranges (void)
+   }
+ }
+ 
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+ 
+ TESTCASE (internal_thread_leaves_no_stack_contents_behind)
+ {
+@@ -818,7 +818,7 @@ leave_marker_on_stack (gpointer data)
+   return NULL;
+ }
+ 
+-#if defined (HAVE_FRIDA_GLIB) && !defined (HAVE_WINDOWS)
++#if defined (HAVE_JPROBE_GLIB) && !defined (HAVE_WINDOWS)
+ 
+ TESTCASE (adopted_thread_can_be_finalized)
+ {
+diff --git a/tests/core/swiftapiresolver/run.py b/tests/core/swiftapiresolver/run.py
+index 928de45..fd386d1 100644
+--- a/tests/core/swiftapiresolver/run.py
++++ b/tests/core/swiftapiresolver/run.py
+@@ -1,5 +1,5 @@
+-import frida
+-from frida_tools.application import Reactor
++import jprobe
++from jprobe_tools.application import Reactor
+ from pathlib import Path
+ import subprocess
+ import sys
+@@ -25,7 +25,7 @@ class Controller:
+         self._reactor.run()
+ 
+     def _start(self):
+-        device = frida.get_remote_device()
++        device = jprobe.get_remote_device()
+         self._device = device
+ 
+         session = device.attach("Xcode")
+diff --git a/tests/core/swiftapiresolver/runner.c b/tests/core/swiftapiresolver/runner.c
+index 2854cd5..a768042 100644
+--- a/tests/core/swiftapiresolver/runner.c
++++ b/tests/core/swiftapiresolver/runner.c
+@@ -26,7 +26,7 @@ init (void)
+   g_assert_nonnull (resolver);
+ 
+ #ifdef HAVE_DARWIN
+-  gum_log = os_log_create ("re.frida.gum",
++  gum_log = os_log_create ("re.jprobe.gum",
+       OS_LOG_CATEGORY_POINTS_OF_INTEREST);
+ #endif
+ }
+diff --git a/tests/gumjs/script.c b/tests/gumjs/script.c
+index 961afea..243ec8f 100644
+--- a/tests/gumjs/script.c
++++ b/tests/gumjs/script.c
+@@ -171,8 +171,8 @@ TESTLIST_BEGIN (script)
+     TESTENTRY (memory_access_monitor_cpu_context_can_be_modified)
+   TESTGROUP_END ()
+ 
+-  TESTENTRY (frida_version_is_available)
+-  TESTENTRY (frida_heap_size_can_be_queried)
++  TESTENTRY (jprobe_version_is_available)
++  TESTENTRY (jprobe_heap_size_can_be_queried)
+ 
+   TESTGROUP_BEGIN ("Process")
+     TESTENTRY (process_arch_is_available)
+@@ -1710,7 +1710,7 @@ TESTCASE (native_function_can_be_invoked_with_size_t)
+    *
+    * Conclusion: If the maximum object size of an implementation corresponds to
+    * the address-width, it could be assumed that SIZE_MAX will not exceed
+-   * UINT64_MAX, for architectures in Frida's scope. This again means, that for
++   * UINT64_MAX, for architectures in Jprobe's scope. This again means, that for
+    * the JavaScript runtimes all possible “size_t” values could be represented
+    * as “uint64” (as 64bit SIZE_MAX of 1844674407370955161UL would exceed the
+    * limits of JavaScript “Number.MAX_SAFE_INTEGER”).
+@@ -4543,7 +4543,7 @@ TESTCASE (inline_sqlite_database_can_be_queried)
+ 
+       /* 6: blob column */
+       "s = db.prepare('SELECT avatar FROM people WHERE name = ?');\n"
+-      "s.bindText(1, 'Frida');\n"
++      "s.bindText(1, 'Jprobe');\n"
+       "send('avatar', s.step()[0]);\n"
+       "send(s.step());\n"
+       "s.reset();\n"
+@@ -4554,7 +4554,7 @@ TESTCASE (inline_sqlite_database_can_be_queried)
+   /* 1: bindInteger() */
+   EXPECT_SEND_MESSAGE_WITH ("[\"Joe\",42]");
+   EXPECT_SEND_MESSAGE_WITH ("null");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"Frida\",7]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"Jprobe\",7]");
+ 
+   /* 2: bindFloat() */
+   EXPECT_SEND_MESSAGE_WITH ("[\"Joe\"]");
+@@ -4564,7 +4564,7 @@ TESTCASE (inline_sqlite_database_can_be_queried)
+   EXPECT_SEND_MESSAGE_WITH ("[42]");
+ 
+   /* 4: bindBlob() */
+-  EXPECT_SEND_MESSAGE_WITH ("[\"Frida\"]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"Jprobe\"]");
+   EXPECT_SEND_MESSAGE_WITH ("null");
+ 
+   /* 5: bindNull() */
+@@ -4666,7 +4666,7 @@ TESTCASE (external_sqlite_database_can_be_queried)
+               "avatar BLOB"
+           ");"
+           "INSERT INTO people VALUES (1, 'Joe', 42, 117, NULL);"
+-          "INSERT INTO people VALUES (2, 'Frida', 7, 140, X'1337');"
++          "INSERT INTO people VALUES (2, 'Jprobe', 7, 140, X'1337');"
+           "COMMIT;"
+       "\");\n"
+       "send(db.dump());\n"
+@@ -4729,7 +4729,7 @@ TESTCASE (external_sqlite_database_can_be_opened_with_flags)
+                   "avatar BLOB"
+               ");"
+               "INSERT INTO people VALUES (1, 'Joe', 42, 117, NULL);"
+-              "INSERT INTO people VALUES (2, 'Frida', 7, 140, X'1337');"
++              "INSERT INTO people VALUES (2, 'Jprobe', 7, 140, X'1337');"
+               "COMMIT;"
+           "\");\n"
+           "send('can write');\n"
+@@ -4968,7 +4968,7 @@ TESTCASE (socket_connection_can_be_established_with_tls)
+       "      'Connection: close',"
+       "      'Host: www.google.com',"
+       "      'Accept: text/html',"
+-      "      'User-Agent: Frida/" FRIDA_VERSION "',"
++      "      'User-Agent: Jprobe/" JPROBE_VERSION "',"
+       "      '',"
+       "      '',"
+       "    ].join('\\r\\n');"
+@@ -5941,15 +5941,15 @@ TESTCASE (stalker_events_can_be_parsed)
+   EXPECT_ERROR_MESSAGE_WITH (ANY_LINE_NUMBER, "Error: invalid event type");
+ }
+ 
+-TESTCASE (frida_version_is_available)
++TESTCASE (jprobe_version_is_available)
+ {
+-  COMPILE_AND_LOAD_SCRIPT ("send(typeof Frida.version);");
++  COMPILE_AND_LOAD_SCRIPT ("send(typeof Jprobe.version);");
+   EXPECT_SEND_MESSAGE_WITH ("\"string\"");
+ }
+ 
+-TESTCASE (frida_heap_size_can_be_queried)
++TESTCASE (jprobe_heap_size_can_be_queried)
+ {
+-  COMPILE_AND_LOAD_SCRIPT ("send(typeof Frida.heapSize);");
++  COMPILE_AND_LOAD_SCRIPT ("send(typeof Jprobe.heapSize);");
+   EXPECT_SEND_MESSAGE_WITH ("\"number\"");
+ }
+ 
+@@ -6883,38 +6883,38 @@ TESTCASE (array_buffer_can_be_created)
+ TESTCASE (method_can_be_called_sync)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports.add = (a, b) => a + b;");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"add\",[1,2]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",3]");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"add\",[1,2]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"jprobe:rpc\",42,\"ok\",3]");
+ }
+ 
+ TESTCASE (method_can_be_called_async)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports.add = async (a, b) => a + b;");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"add\",[1,2]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",3]");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"add\",[1,2]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"jprobe:rpc\",42,\"ok\",3]");
+ }
+ 
+ TESTCASE (method_can_throw_sync)
+ {
+   COMPILE_AND_LOAD_SCRIPT (
+       "rpc.exports.raise = () => { throw new Error('no'); }");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"raise\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"frida:rpc\",42,\"error\",\"no\",");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"raise\",[]]");
++  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"jprobe:rpc\",42,\"error\",\"no\",");
+ }
+ 
+ TESTCASE (method_can_throw_async)
+ {
+   COMPILE_AND_LOAD_SCRIPT (
+       "rpc.exports.raise = async () => { throw new Error('no'); }");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"raise\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"frida:rpc\",42,\"error\",\"no\",");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"raise\",[]]");
++  EXPECT_SEND_MESSAGE_WITH_PREFIX ("[\"jprobe:rpc\",42,\"error\",\"no\",");
+ }
+ 
+ TESTCASE (method_can_return_null)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports.returnNull = () => null;");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"returnNull\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",null]");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"returnNull\",[]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"jprobe:rpc\",42,\"ok\",null]");
+ }
+ 
+ TESTCASE (method_can_receive_binary_data)
+@@ -6929,11 +6929,11 @@ TESTCASE (method_can_receive_binary_data)
+ 
+   bytes = g_bytes_new_static (data_to_send, sizeof (data_to_send));
+   gum_script_post (fixture->script,
+-      "[\"frida:rpc\",42,\"call\",\"eat\",[\"yoghurt\"]]", bytes);
++      "[\"jprobe:rpc\",42,\"call\",\"eat\",[\"yoghurt\"]]", bytes);
+   g_bytes_unref (bytes);
+ 
+   EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA ("\"yoghurt\"", "13 37");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",null]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"jprobe:rpc\",42,\"ok\",null]");
+ }
+ 
+ TESTCASE (method_can_return_binary_data)
+@@ -6943,8 +6943,8 @@ TESTCASE (method_can_return_binary_data)
+           "const buf = Memory.allocUtf8String(\"Yo\");\n"
+           "return buf.readByteArray(2);\n"
+       "};\n");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"read\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA ("[\"frida:rpc\",42,\"ok\",null]",
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"read\",[]]");
++  EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA ("[\"jprobe:rpc\",42,\"ok\",null]",
+       "59 6f");
+ }
+ 
+@@ -6955,24 +6955,24 @@ TESTCASE (method_can_return_value_and_binary_data)
+           "const buf = Memory.allocUtf8String(\"Yo\");"
+           "return [{meta: 'data'}, buf.readByteArray(2)];"
+       "};");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"read\",[]]");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"read\",[]]");
+   EXPECT_SEND_MESSAGE_WITH_PAYLOAD_AND_DATA (
+-      "[\"frida:rpc\",42,\"ok\",null,{\"meta\":\"data\"}]",
++      "[\"jprobe:rpc\",42,\"ok\",null,{\"meta\":\"data\"}]",
+       "59 6f");
+ }
+ 
+ TESTCASE (method_list_can_be_queried)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("rpc.exports = { a() {}, b() {}, c() {} };");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"list\"]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"ok\",[\"a\",\"b\",\"c\"]]");
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"list\"]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"jprobe:rpc\",42,\"ok\",[\"a\",\"b\",\"c\"]]");
+ }
+ 
+ TESTCASE (calling_inexistent_method_should_throw_error)
+ {
+   COMPILE_AND_LOAD_SCRIPT ("");
+-  POST_MESSAGE ("[\"frida:rpc\",42,\"call\",\"banana\",[]]");
+-  EXPECT_SEND_MESSAGE_WITH ("[\"frida:rpc\",42,\"error\","
++  POST_MESSAGE ("[\"jprobe:rpc\",42,\"call\",\"banana\",[]]");
++  EXPECT_SEND_MESSAGE_WITH ("[\"jprobe:rpc\",42,\"error\","
+       "\"unable to find method 'banana'\"]");
+ }
+ 
+@@ -11774,7 +11774,7 @@ TESTCASE (dynamic_script_loaded_should_support_separate_source_map)
+   COMPILE_AND_LOAD_SCRIPT (
+       "async function main() {"
+         "Script.registerSourceMap('/agent/math.js', `{\"version\":3,\"file\":\""
+-          "math.js\",\"sourceRoot\":\"/Users/oleavr/src/frida-agent-example/\","
++          "math.js\",\"sourceRoot\":\"/Users/oleavr/src/jprobe-agent-example/\","
+           "\"sources\":[\"agent/math.ts\"],\"names\":[],\"mappings\":\"AAAA,MAA"
+           "M,UAAU,GAAG,CAAC,CAAS,EAAE,CAAS;IACpC,MAAM,IAAI,KAAK,CAAC,qBAAqB,CAA"
+           "C,CAAC;AAC3C,CAAC\"}`);"
+@@ -11783,7 +11783,7 @@ TESTCASE (dynamic_script_loaded_should_support_separate_source_map)
+           "    throw new Error(\"not yet implemented\");\n"
+           "}\n`);"
+         "Script.registerSourceMap('/agent/index.js', `{\"version\":3,\"file\":"
+-          "\"index.js\",\"sourceRoot\":\"/Users/oleavr/src/frida-agent-example/"
++          "\"index.js\",\"sourceRoot\":\"/Users/oleavr/src/jprobe-agent-example/"
+           "\",\"sources\":[\"agent/index.ts\"],\"names\":[],\"mappings\":\"AAAA"
+           ",OAAO,KAAK,IAAI,MAAM,WAAW,CAAC;AAElC,IAAI;IACA,IAAI,CAAC,GAAG,CAAC,C"
+           "AAC,EAAE,CAAC,CAAC,CAAC;CAClB;AAAC,OAAO,CAAC,EAAE;IACR,IAAI,CAAE,CAA"
+@@ -11937,7 +11937,7 @@ TESTCASE (source_maps_should_be_supported_for_our_runtime)
+   COMPILE_AND_LOAD_SCRIPT ("hexdump(null);");
+ 
+   item = test_script_fixture_pop_message (fixture);
+-  g_assert_nonnull (strstr (item->message, " (/frida/runtime/hexdump.js:"));
++  g_assert_nonnull (strstr (item->message, " (/jprobe/runtime/hexdump.js:"));
+   test_script_message_item_free (item);
+ 
+   EXPECT_NO_MESSAGES ();
+@@ -12031,11 +12031,11 @@ TESTCASE (source_maps_should_be_supported_for_user_scripts)
+         "    at add (math.js:5:1)\\n"
+         "    at <anonymous> (index.js:6:1)\\n"
+         "    at call (native)\\n"
+-        "    at s (node_modules/frida/node_modules/browserify/node_modules/"
++        "    at s (node_modules/jprobe/node_modules/browserify/node_modules/"
+             "browser-pack/_prelude.js:1:1)\\n"
+-        "    at e (node_modules/frida/node_modules/browserify/node_modules/"
++        "    at e (node_modules/jprobe/node_modules/browserify/node_modules/"
+             "browser-pack/_prelude.js:1:1)\\n"
+-        "    at <eval> (node_modules/frida/node_modules/browserify/"
++        "    at <eval> (node_modules/jprobe/node_modules/browserify/"
+             "node_modules/browser-pack/_prelude.js:1:1)"));
+   }
+   else
+@@ -12044,11 +12044,11 @@ TESTCASE (source_maps_should_be_supported_for_user_scripts)
+         "\"payload\":\"Error: not yet implemented\\n"
+         "    at Object.add (math.js:5:1)\\n"
+         "    at Object.1../math (index.js:6:1)\\n"
+-        "    at s (node_modules/frida/node_modules/browserify/node_modules/"
++        "    at s (node_modules/jprobe/node_modules/browserify/node_modules/"
+             "browser-pack/_prelude.js:1:1)\\n"
+-        "    at e (node_modules/frida/node_modules/browserify/node_modules/"
++        "    at e (node_modules/jprobe/node_modules/browserify/node_modules/"
+             "browser-pack/_prelude.js:1:1)\\n"
+-        "    at node_modules/frida/node_modules/browserify/node_modules/"
++        "    at node_modules/jprobe/node_modules/browserify/node_modules/"
+             "browser-pack/_prelude.js:1:1\""));
+   }
+   test_script_message_item_free (item);
+diff --git a/tests/gumtest.c b/tests/gumtest.c
+index 9f10285..19d751e 100644
+--- a/tests/gumtest.c
++++ b/tests/gumtest.c
+@@ -55,7 +55,7 @@ static guint get_number_of_tests_in_suite (GTestSuite * suite);
+ gint
+ main (gint argc, gchar * argv[])
+ {
+-#if defined (HAVE_FRIDA_GLIB) && !DEBUG_HEAP_LEAKS && !defined (HAVE_ASAN)
++#if defined (HAVE_JPROBE_GLIB) && !DEBUG_HEAP_LEAKS && !defined (HAVE_ASAN)
+   GMemVTable mem_vtable = {
+     gum_malloc,
+     gum_realloc,
+@@ -119,7 +119,7 @@ main (gint argc, gchar * argv[])
+   }
+   else
+   {
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+     g_mem_set_vtable (&mem_vtable);
+ #endif
+   }
+@@ -128,7 +128,7 @@ main (gint argc, gchar * argv[])
+ #endif
+   g_setenv ("G_DEBUG", "fatal-warnings:fatal-criticals", TRUE);
+   g_setenv ("SWIFT_BACKTRACE", "enable=no", TRUE);
+-#ifdef HAVE_FRIDA_GLIB
++#ifdef HAVE_JPROBE_GLIB
+   glib_init ();
+ # ifdef HAVE_GUMJS
+   gio_init ();
+@@ -301,7 +301,7 @@ main (gint argc, gchar * argv[])
+   TESTLIST_REGISTER (profiler);
+ #endif
+ 
+-#if defined (HAVE_GUMJS) && defined (HAVE_FRIDA_GLIB)
++#if defined (HAVE_GUMJS) && defined (HAVE_JPROBE_GLIB)
+   /* GumJS */
+   {
+     GumScriptBackend * qjs_backend, * v8_backend;
+diff --git a/tests/prof/sampler.c b/tests/prof/sampler.c
+index e0970c4..a4e8bfb 100644
+--- a/tests/prof/sampler.c
++++ b/tests/prof/sampler.c
+@@ -10,7 +10,7 @@
+ TESTLIST_BEGIN (sampler)
+   TESTENTRY (cycle)
+   TESTENTRY (busy_cycle)
+-#if defined (HAVE_FRIDA_GLIB) && !defined (HAVE_ASAN)
++#if defined (HAVE_JPROBE_GLIB) && !defined (HAVE_ASAN)
+   TESTENTRY (malloc_count)
+ #endif
+   TESTENTRY (multiple_call_counters)
+@@ -94,7 +94,7 @@ TESTCASE (busy_cycle)
+   }
+ }
+ 
+-#if defined (HAVE_FRIDA_GLIB) && !defined (HAVE_ASAN)
++#if defined (HAVE_JPROBE_GLIB) && !defined (HAVE_ASAN)
+ 
+ static gpointer malloc_count_helper_thread (gpointer data);
+ 
+diff --git a/tests/testutil.c b/tests/testutil.c
+index 0a220e7..fcdd634 100644
+--- a/tests/testutil.c
++++ b/tests/testutil.c
+@@ -323,7 +323,7 @@ test_util_get_data_dir (void)
+       return find_data_dir_from_executable_path (path);
+   }
+ 
+-  return g_strdup ("/Library/Frida/tests/data");
++  return g_strdup ("/Library/Jprobe/tests/data");
+ #elif defined (HAVE_LINUX)
+   gchar * result, * path;
+ 
+diff --git a/tools/build-xcframework.py b/tools/build-xcframework.py
+index 8880d24..57e3b58 100755
+--- a/tools/build-xcframework.py
++++ b/tools/build-xcframework.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-"""Build a Frida devkit as an Apple XCFramework."""
++"""Build a Jprobe devkit as an Apple XCFramework."""
+ 
+ import argparse
+ import os
+@@ -14,12 +14,12 @@ KITS = {
+     "gum": {
+         "kit_id": "frida-gum",
+         "meson_name": "gum",
+-        "framework_name": "FridaGum",
++        "framework_name": "JprobeGum",
+     },
+     "gumjs": {
+         "kit_id": "frida-gumjs",
+         "meson_name": "gumjs",
+-        "framework_name": "FridaGumJS",
++        "framework_name": "JprobeGumJS",
+     },
+ }
+ 
+@@ -28,7 +28,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
+ 
+ def main():
+     parser = argparse.ArgumentParser(
+-        description="Build a Frida devkit as an Apple XCFramework.",
++        description="Build a Jprobe devkit as an Apple XCFramework.",
+         epilog="""\
+ examples:
+   %(prog)s ios-arm64-simulator ios-x86_64-simulator
+@@ -41,7 +41,7 @@ examples:
+         "targets",
+         nargs="+",
+         metavar="TARGET",
+-        help="Frida host triple (e.g. ios-arm64, ios-arm64-simulator, macos-arm64)",
++        help="Jprobe host triple (e.g. ios-arm64, ios-arm64-simulator, macos-arm64)",
+     )
+     parser.add_argument(
+         "--kit",
+diff --git a/tools/detect-version.py b/tools/detect-version.py
+index ffece66..bd06858 100644
+--- a/tools/detect-version.py
++++ b/tools/detect-version.py
+@@ -19,7 +19,7 @@ def detect_version() -> str:
+ 
+ 
+ def enumerate_releng_locations() -> Iterator[Path]:
+-    val = os.environ.get("FRIDA_RELENG")
++    val = os.environ.get("JPROBE_RELENG")
+     if val is not None:
+         custom_releng = Path(val)
+         if releng_location_exists(custom_releng):
+diff --git a/vapi/frida-gum-1.0.vapi b/vapi/frida-gum-1.0.vapi
+index bd37027..a1d30d2 100644
+--- a/vapi/frida-gum-1.0.vapi
++++ b/vapi/frida-gum-1.0.vapi
+@@ -1,4 +1,4 @@
+-[CCode (cheader_filename = "gum/gum.h", gir_namespace = "FridaGum", gir_version = "1.0")]
++[CCode (cheader_filename = "gum/gum.h", gir_namespace = "JprobeGum", gir_version = "1.0")]
+ namespace Gum {
+ 	public void init ();
+ 	public void shutdown ();
+diff --git a/vapi/frida-gum-heap-1.0.vapi b/vapi/frida-gum-heap-1.0.vapi
+index aa0b764..a6a9071 100644
+--- a/vapi/frida-gum-heap-1.0.vapi
++++ b/vapi/frida-gum-heap-1.0.vapi
+@@ -1,4 +1,4 @@
+-[CCode (cheader_filename = "gum/gum-heap.h", gir_namespace = "FridaGum", gir_version = "1.0")]
++[CCode (cheader_filename = "gum/gum-heap.h", gir_namespace = "JprobeGum", gir_version = "1.0")]
+ namespace Gum {
+ 	public class InstanceTracker : GLib.Object {
+ 		public InstanceTracker ();

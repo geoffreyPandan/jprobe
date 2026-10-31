@@ -1,0 +1,24 @@
+{
+  "port": 35000,
+  "trials": [
+    {
+      "pid": 5218,
+      "status": "检测结果: 未检出\n\n=== 雪落无痕（8 路评分阈值制 · 加载期先跑 · C++ OOP）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n------------------------------------------------------\n① 信号试点自检     : 安全\n② TracerPid 追踪   : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n⑦ libc 段采样校验  : 安全\n⑧ libc 符号完整性  : 安全\n------------------------------------------------------\n命中 1/8 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_snow\n标记B: Fatdog_sow",
+      "pidAfter": 5218,
+      "clientAttachedAtCapture": true,
+      "snowLoaded": true,
+      "mapsKeywordMatches": "",
+      "threadKeywordMatches": ""
+    },
+    {
+      "pid": 5508,
+      "status": "检测结果: 未检出\n\n=== 雪落无痕（8 路评分阈值制 · 加载期先跑 · C++ OOP）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n------------------------------------------------------\n① 信号试点自检     : 安全\n② TracerPid 追踪   : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n⑦ libc 段采样校验  : 安全\n⑧ libc 符号完整性  : 安全\n------------------------------------------------------\n命中 1/8 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_snow\n标记B: Fatdog_sow",
+      "pidAfter": 5508,
+      "clientAttachedAtCapture": true,
+      "snowLoaded": true,
+      "mapsKeywordMatches": "",
+      "threadKeywordMatches": ""
+    }
+  ],
+  "serverSha256": "a73b151b0f9319fd07fafacfd91d3987450b9efaa46843b3c06a7c6b1a0b4734"
+}

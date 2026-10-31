@@ -1,0 +1,10 @@
+GCC libstdc++ 13.3.0, matching Ubuntu 13.3.0-6ubuntu2~24.04.1.
+Source files:
+https://github.com/gcc-mirror/gcc/blob/releases/gcc-13.3.0/libstdc++-v3/config/locale/gnu/time_members.cc
+https://github.com/gcc-mirror/gcc/blob/releases/gcc-13.3.0/libstdc++-v3/config/locale/gnu/c++locale_internal.h
+
+Only time_members.o was rebuilt. The original four global defined symbols
+are preserved. The patched object is linked into isolated x86 and x86_64
+copies of libstdc++.a; the system archive remains untouched.
+
+GCC source carries GPL-3.0-or-later with the GCC Runtime Library Exception.

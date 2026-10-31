@@ -1,0 +1,8 @@
+{
+  global:
+    jprobe_agent_main;
+    jprobe_prospero_agent_args;
+
+  local:
+    *;
+};

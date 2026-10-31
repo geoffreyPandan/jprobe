@@ -1,0 +1,206 @@
+diff --git a/meson.build b/meson.build
+index c4dc348..1e7e805 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1,22 +1,39 @@
+-project('frida', 'c',
++project('jprobe', 'c',
+   version: run_command('releng' / 'frida_version.py', check: true).stdout().strip(),
+   meson_version: '>=1.1.0',
+ )
+ 
++add_languages('cpp', native: false)
++
++# Cover dependencies and separate compatibility builds as well as this project.
++if not meson.is_subproject() and meson.get_compiler('c').get_id() in ['clang', 'gcc']
++  jp_fs = import('fs')
++  foreach part : ['', 'subprojects/frida-core', 'subprojects/frida-gum',
++                  'subprojects/frida-core/subprojects/frida-gum',
++                  'subprojects/frida-core/subprojects/efni']
++    actual = meson.project_source_root() / part
++    relative = jp_fs.relative_to(actual, meson.project_build_root())
++    normalized = '/src/jprobe' / part.replace('frida', 'jprobe')
++    add_global_arguments('-ffile-prefix-map=' + actual + '=' + normalized,
++                         '-ffile-prefix-map=' + relative + '=' + normalized,
++                         language: ['c', 'cpp'])
++  endforeach
++endif
++
+ python = import('python').find_installation()
+ 
+ is_cross_build = meson.is_cross_build()
+ is_watchos = host_machine.subsystem().split('-')[0] == 'watchos'
+ 
+ gum_options = [
+-  'frida_version=' + meson.project_version(),
++  'jprobe_version=' + meson.project_version(),
+   'graft_tool=' + (get_option('graft_tool').disable_auto_if(is_cross_build).allowed() ? 'enabled' : 'disabled'),
+   'gumjs=enabled',
+ ]
+ subproject('frida-gum', default_options: gum_options)
+ 
+ core_options = [
+-  'frida_version=' + meson.project_version(),
++  'jprobe_version=' + meson.project_version(),
+ ]
+ core_options += 'gadget=' + (get_option('gadget').disable_auto_if(not is_cross_build).allowed() ? 'enabled' : 'disabled')
+ foreach component : ['server', 'portal', 'inject']
+@@ -29,11 +46,11 @@ subproject('frida-core', default_options: core_options)
+ 
+ ensure_submodules = [python, files('tools' / 'ensure-submodules.py')]
+ 
+-if get_option('frida_net') \
++if get_option('jprobe_net') \
+     .disable_auto_if(is_cross_build) \
+     .allowed()
+   dotnet = find_program('dotnet', required: false)
+-  if get_option('frida_net') \
++  if get_option('jprobe_net') \
+       .disable_auto_if(not dotnet.found()) \
+       .allowed()
+     run_command(ensure_submodules, 'frida-net', check: true)
+@@ -41,21 +58,21 @@ if get_option('frida_net') \
+   endif
+ endif
+ 
+-if get_option('frida_node') \
++if get_option('jprobe_node') \
+     .disable_auto_if(is_cross_build) \
+     .allowed()
+   run_command(ensure_submodules, 'frida-node', check: true)
+   subproject('frida-node')
+ endif
+ 
+-if get_option('frida_python') \
++if get_option('jprobe_python') \
+     .disable_auto_if(is_cross_build) \
+     .allowed()
+   run_command(ensure_submodules, 'frida-python', check: true)
+   subproject('frida-python')
+ endif
+ 
+-if get_option('frida_swift') \
++if get_option('jprobe_swift') \
+     .disable_auto_if(is_cross_build) \
+     .disable_auto_if(build_machine.system() != 'macos') \
+     .allowed()
+@@ -63,11 +80,11 @@ if get_option('frida_swift') \
+   subproject('frida-swift')
+ endif
+ 
+-if get_option('frida_qml') \
++if get_option('jprobe_qml') \
+     .disable_auto_if(is_cross_build) \
+     .allowed()
+   qt6_dep = dependency('qt6', modules: ['Core'], required: false)
+-  if get_option('frida_qml') \
++  if get_option('jprobe_qml') \
+       .disable_auto_if(not qt6_dep.found()) \
+       .allowed()
+     run_command(ensure_submodules, 'frida-qml', check: true)
+@@ -75,7 +92,7 @@ if get_option('frida_qml') \
+   endif
+ endif
+ 
+-if get_option('frida_tools') \
++if get_option('jprobe_tools') \
+     .disable_auto_if(is_cross_build) \
+     .allowed()
+   run_command(ensure_submodules, 'frida-tools', check: true)
+diff --git a/meson.options b/meson.options
+index 0c8ab06..f3b2880 100644
+--- a/meson.options
++++ b/meson.options
+@@ -1,4 +1,4 @@
+-option('frida_tools',
++option('jprobe_tools',
+   type: 'feature',
+   value: 'auto',
+   description: 'Build CLI tools, like frida, frida-trace, etc.',
+@@ -13,13 +13,13 @@ option('graft_tool',
+ option('gadget',
+   type: 'feature',
+   value: 'auto',
+-  description: 'Build frida-gadget',
++  description: 'Build jprobe-gadget',
+ )
+ 
+ option('server',
+   type: 'feature',
+   value: 'auto',
+-  description: 'Build frida-server',
++  description: 'Build jprobe-server',
+ )
+ 
+ option('portal',
+@@ -31,34 +31,34 @@ option('portal',
+ option('inject',
+   type: 'feature',
+   value: 'auto',
+-  description: 'Build frida-inject',
++  description: 'Build jprobe-inject',
+ )
+ 
+-option('frida_net',
++option('jprobe_net',
+   type: 'feature',
+   value: 'disabled',
+   description: 'Build .NET bindings',
+ )
+ 
+-option('frida_node',
++option('jprobe_node',
+   type: 'feature',
+   value: 'disabled',
+   description: 'Build Node.js bindings',
+ )
+ 
+-option('frida_python',
++option('jprobe_python',
+   type: 'feature',
+   value: 'auto',
+   description: 'Build Python bindings',
+ )
+ 
+-option('frida_swift',
++option('jprobe_swift',
+   type: 'feature',
+   value: 'disabled',
+   description: 'Build Swift bindings',
+ )
+ 
+-option('frida_qml',
++option('jprobe_qml',
+   type: 'feature',
+   value: 'disabled',
+   description: 'Build QML bindings',
+diff --git a/subprojects/frida-core b/subprojects/frida-core
+--- a/subprojects/frida-core
++++ b/subprojects/frida-core
+@@ -1 +1 @@
+-Subproject commit f91556129517937e82831458d10f6b8f4ca06dbb
++Subproject commit f91556129517937e82831458d10f6b8f4ca06dbb-dirty
+diff --git a/subprojects/frida-gum b/subprojects/frida-gum
+--- a/subprojects/frida-gum
++++ b/subprojects/frida-gum
+@@ -1 +1 @@
+-Subproject commit 5ebe3aeccab8dcd4b727378dab67fb15fa8a3cca
++Subproject commit 5ebe3aeccab8dcd4b727378dab67fb15fa8a3cca-dirty
+diff --git a/subprojects/frida-python b/subprojects/frida-python
+--- a/subprojects/frida-python
++++ b/subprojects/frida-python
+@@ -1 +1 @@
+-Subproject commit c6862934002a1835c51cd6a7ca4d7b949c968971
++Subproject commit c6862934002a1835c51cd6a7ca4d7b949c968971-dirty
+diff --git a/subprojects/frida-tools b/subprojects/frida-tools
+--- a/subprojects/frida-tools
++++ b/subprojects/frida-tools
+@@ -1 +1 @@
+-Subproject commit a8c12cef7f728812bc8c70197505e8f40e1c26e4
++Subproject commit a8c12cef7f728812bc8c70197505e8f40e1c26e4-dirty
+diff --git a/subprojects/idun b/subprojects/idun
+--- a/subprojects/idun
++++ b/subprojects/idun
+@@ -1 +1 @@
+-Subproject commit eaf98270beab0ecf174e611d99036db6843a1865
++Subproject commit eaf98270beab0ecf174e611d99036db6843a1865-dirty
