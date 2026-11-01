@@ -1,0 +1,6 @@
+{
+  "package": "zlib",
+  "sourceUrl": "https://github.com/frida/zlib.git",
+  "pinnedCommit": "b910f805561e24a7a25521de438c82942cd7885b",
+  "actualCommit": "b910f805561e24a7a25521de438c82942cd7885b"
+}

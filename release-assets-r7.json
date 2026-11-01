@@ -1,0 +1,80 @@
+[
+  {
+    "file": "android-jprobe-agent-arm.so",
+    "kind": "android-r7",
+    "size": 23466224,
+    "sha256": "30361476aa075b929e2431d3d9c7d59a090794f4db4fcb693cd97543d5eb44ae"
+  },
+  {
+    "file": "android-jprobe-agent-arm64.so",
+    "kind": "android-r7",
+    "size": 39114480,
+    "sha256": "82b74cdd61e50e44e0719663ae28785c7ac99b47fb4996fe105eacdc852085b3"
+  },
+  {
+    "file": "android-jprobe-gadget-arm.so",
+    "kind": "android-r7",
+    "size": 23654672,
+    "sha256": "c2998d6c552d5a3d8ae4df9a44c8fef68a44cc9b737b2e93f276013dfab9d1c6"
+  },
+  {
+    "file": "android-jprobe-gadget-arm64.so",
+    "kind": "android-r7",
+    "size": 39409456,
+    "sha256": "00a223130070a90293b2376fe31145e7c6f558594ba20bafc71205269d42580c"
+  },
+  {
+    "file": "android-jprobe-inject",
+    "kind": "android-r7",
+    "size": 84607480,
+    "sha256": "94e437e1cefe3fb9bfb55daec4a07519711644718e8bcb5feff787e93735858c"
+  },
+  {
+    "file": "android-jprobe-server",
+    "kind": "android-r7",
+    "size": 84855816,
+    "sha256": "8f5770d06e04490105b13b0436be4cb65cf2d65a9bfbc5b82d8b2b9a8a8c128b"
+  },
+  {
+    "file": "jprobe-17.25.0-cp37-abi3-macosx_14_0_arm64.whl",
+    "kind": "macos-client",
+    "size": 32012818,
+    "sha256": "c73c0d3e5f8ade32197fc4d1c78c3bc33a7dec075dae02c807aa0d9ebc08bea5"
+  },
+  {
+    "file": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+    "kind": "macos-client",
+    "size": 4722988,
+    "sha256": "a28e7f570c21034ed30e69a90b87e09aad3339d7edb662dd8425c62384ddb5f3"
+  },
+  {
+    "file": "sdk-macos-arm64.tar.xz",
+    "kind": "sdk",
+    "size": 42149652,
+    "sha256": "8500ec8e49c5355e77dcc464b6e3476bb3d5773d70a0ee643580c5649f1deda0"
+  },
+  {
+    "file": "sdk-android-arm.tar.xz",
+    "kind": "vm-sdk",
+    "size": 50594340,
+    "sha256": "8aeeba852c5ac40f839638b6a4efeb319ac7ae90454ec55eb16817e6ff7300d5"
+  },
+  {
+    "file": "sdk-android-arm64.tar.xz",
+    "kind": "vm-sdk",
+    "size": 53791524,
+    "sha256": "22d52891334752a645d2317724df22c9373fd696d489efd6a9bb8eecf898902f"
+  },
+  {
+    "file": "sdk-linux-x86.tar.xz",
+    "kind": "vm-sdk",
+    "size": 49798036,
+    "sha256": "65e00a0abdf32abbcd50b09539d9f24b0914450e34eb0bc2314900f4897d89fc"
+  },
+  {
+    "file": "sdk-linux-x86_64.tar.xz",
+    "kind": "vm-sdk",
+    "size": 52890468,
+    "sha256": "71961f7debbec564475039729240bdb1020f03305684db17198aebb634eab3e3"
+  }
+]

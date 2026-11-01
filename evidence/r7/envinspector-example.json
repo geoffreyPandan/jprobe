@@ -1,0 +1,14 @@
+{
+  "package": "dev.jim.envinspector",
+  "version": "1.0.1",
+  "baselineSignals": 7,
+  "hookedSignals": 0,
+  "repeatSignals": 0,
+  "checks": 40,
+  "limitedOrUnavailable": 7,
+  "signalsFilterEmpty": true,
+  "mode": "attach existing process then tap start scan",
+  "spawnAttempt": "timed out; attach succeeded",
+  "scriptSha256": "a920a401805a62086c577ef7774d17b737f0e067826b209cb12d3e42254ad6fa",
+  "changes": "App Finding constructor SIGNAL to CLEAR; no device hiding settings changed"
+}

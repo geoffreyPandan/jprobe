@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "host": "macos-arm64",
+  "auditPassed": true,
+  "libraries": {
+    "lib/libglib-2.0.a": "5aed9387490ff9ff2f29dc6177f7d348f349698c1bb836553c78e8fb45287615",
+    "lib/libgobject-2.0.a": "fb8a24ce02ea2de6aea90847c803e471dd3fe266fa2213a94303f9e3183ade55",
+    "lib/libgio-2.0.a": "3127a30bb47d74a1af2f866cbc8b455941cbef6dab415e1cf97f9e1280038621",
+    "lib/libgmodule-2.0.a": "dcf90611dcb5469a427c4bc30038cdf69ca7fbe59d3aa4990fb1bb9324ae6f7b",
+    "lib/libgthread-2.0.a": "1a3bd3232774b89b704f732fef9c81c6a17c8ce1a99ca748e0834e719aca7a20",
+    "lib/libtcc.a": "74b7f4547f0ba49e2deaf4cc1cf892060466b78ce04147a085f6062dda3d492d",
+    "lib/libv8-15.7.a": "e1f96f5487120ffa552076136bbae48af368a01ec9e0933d5875aec335bcfda5"
+  },
+  "scope": "rebuilt archives after strip -S; raw case-insensitive ASCII and UTF-16LE frida scan"
+}

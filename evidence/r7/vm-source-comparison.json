@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-01",
+  "comparedComponents": {
+    "root": true,
+    "frida-core": true,
+    "frida-gum": true,
+    "frida-python": true,
+    "frida-tools": true,
+    "idun": true
+  },
+  "comparison": "VM base working-tree diffs versus repository patches; CRLF normalized",
+  "newSourceCompared": 156,
+  "newSourceDifferences": [
+    "two macOS Objective-C helper files contain the Mac build fixes",
+    "Windows gadget export file differs only in line endings"
+  ],
+  "missingNewSourceFiles": [],
+  "extraNonBackupSource": "No missing source; one generated tracer_ui.zip excluded",
+  "r7Delta": "patches/android-thread-name-r7.patch",
+  "vmSdkArchiveHashes": "release-assets-r7.json",
+  "notes": "VM source and build outputs were read only. No new build or deployment."
+}

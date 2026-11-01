@@ -1,0 +1,62 @@
+{
+  "strictZeroRawKeywordHits": false,
+  "acceptedException": "Standalone Friday in libc++ locale date table; explicitly accepted by user",
+  "otherRawKeywordMatches": 0,
+  "injectedJavaScriptFiles": 7,
+  "nativeExtensionSha256": "c9ada79686f38e916aada8e800138569465118013557ba14100ccd8cf96c155e",
+  "files": [
+    {
+      "wheel": "jprobe-17.25.0-cp37-abi3-macosx_14_0_arm64.whl",
+      "member": "jprobe/_jprobe.abi3.so",
+      "asciiMatches": [
+        {
+          "offset": 49849523,
+          "containingString": "Friday"
+        }
+      ],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/fs_agent.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/itracer_agent.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/repl_agent.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/tracer_agent.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/bridges/java.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/bridges/objc.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    },
+    {
+      "wheel": "jprobe_tools-14.11.0+jprobe-py3-none-any.whl",
+      "member": "jprobe_tools/bridges/swift.js",
+      "asciiMatches": [],
+      "utf16LEMatches": 0
+    }
+  ]
+}

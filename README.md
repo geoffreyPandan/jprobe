@@ -1,4 +1,25 @@
-# jprobe r6d publication kit
+# jprobe source and build kit
+
+The current additions preserve the Android R7 candidate and the native macOS
+ARM64 client built on 2026-11-01. The r6d base remains pinned and is retained
+below as historical provenance.
+
+- [Android R7 / Linux VM build](docs/ANDROID-R7.md)
+- [macOS build and packaging scripts](docs/MACOS-REBUILD.md)
+- [macOS SDK rebuild and patches](sdk-macos/README.md)
+- [Current verification and known limits](docs/R7-VALIDATION.md)
+- [Environment Inspector result-override example](examples/envinspector/README.md)
+- `release-assets-r7.json`: SHA-256 and sizes for separately staged binaries
+  and SDK archives; a manifest entry does not mean the asset is uploaded.
+
+For the Mac scripts, keep this repository at `workspace/jprobe/` and the
+prepared upstream source at `workspace/upstream/`. Build/cache/output directories
+remain outside this repository. The scripts preserve the strict zero-keyword
+gate; the verified Mac candidate's accepted ordinary word `Friday` is recorded
+explicitly and still stops that gate. See the validation document before using
+the rebuild procedure.
+
+## Historical r6d publication
 
 This repository contains the source changes for `jprobe` 17.25.0 and the
 records for the Android ARM64 / Linux x86_64 build tested on a Pixel 6. It is
@@ -35,7 +56,7 @@ the source references in `evidence/release.json` document the base build.
 
 Upload the ten files listed in `release-assets.json` to a GitHub Release named
 `shared-code-sync-r6d`. They are staged on the build VM at
-`/home/jim/jprobe/publication/shared-code-sync-r6d/release-assets/`.
+`<BASE_WORKSPACE>/publication/shared-code-sync-r6d/release-assets/`.
 
 The Python wheel `jprobe-17.25.0-cp37-abi3-linux_x86_64.whl` runs on Linux
 x86_64. It does not install natively on macOS. A Mac can create this GitHub

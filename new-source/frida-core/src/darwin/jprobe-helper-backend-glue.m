@@ -1,4 +1,4 @@
-#include "frida-helper-backend.h"
+#include "jprobe-helper-backend.h"
 
 #include "frida-tvos.h"
 
@@ -43,9 +43,9 @@
 # define PROC_PIDPATHINFO_MAXSIZE (4 * MAXPATHLEN)
 #endif
 
-#define FRIDA_PSR_THUMB                  0x20
-#define FRIDA_MAX_BREAKPOINTS            4
-#define FRIDA_MAX_PAGE_POOL              8
+#define JPROBE_PSR_THUMB                  0x20
+#define JPROBE_MAX_BREAKPOINTS            4
+#define JPROBE_MAX_PAGE_POOL              8
 
 #if (defined (HAVE_ARM) || defined (HAVE_ARM64)) && !defined (__darwin_arm_thread_state64_get_pc)
 # define __darwin_arm_thread_state64_get_pc(ts) \
@@ -89,32 +89,32 @@
 # define CORE_FOUNDATION "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation"
 #endif
 
-typedef struct _FridaDispatchContext FridaDispatchContext;
-typedef struct _FridaSpawnInstance FridaSpawnInstance;
-typedef guint FridaDyldFlavor;
-typedef struct _FridaSpawnInstanceDyldData FridaSpawnInstanceDyldData;
-typedef guint FridaBreakpointPhase;
-typedef guint FridaBreakpointRepeat;
-typedef struct _FridaBreakpoint FridaBreakpoint;
-typedef guint FridaRetState;
-typedef struct _FridaPagePoolEntry FridaPagePoolEntry;
-typedef struct _FridaInjectInstance FridaInjectInstance;
-typedef struct _FridaInjectPayloadLayout FridaInjectPayloadLayout;
-typedef struct _FridaAgentDetails FridaAgentDetails;
-typedef struct _FridaAgentContext FridaAgentContext;
-typedef struct _FridaAgentEmitContext FridaAgentEmitContext;
+typedef struct _JprobeDispatchContext JprobeDispatchContext;
+typedef struct _JprobeSpawnInstance JprobeSpawnInstance;
+typedef guint JprobeDyldFlavor;
+typedef struct _JprobeSpawnInstanceDyldData JprobeSpawnInstanceDyldData;
+typedef guint JprobeBreakpointPhase;
+typedef guint JprobeBreakpointRepeat;
+typedef struct _JprobeBreakpoint JprobeBreakpoint;
+typedef guint JprobeRetState;
+typedef struct _JprobePagePoolEntry JprobePagePoolEntry;
+typedef struct _JprobeInjectInstance JprobeInjectInstance;
+typedef struct _JprobeInjectPayloadLayout JprobeInjectPayloadLayout;
+typedef struct _JprobeAgentDetails JprobeAgentDetails;
+typedef struct _JprobeAgentContext JprobeAgentContext;
+typedef struct _JprobeAgentEmitContext JprobeAgentEmitContext;
 
-typedef struct _FridaExceptionPortSet FridaExceptionPortSet;
-typedef union _FridaDebugState FridaDebugState;
-typedef int FridaConvertThreadStateDirection;
-typedef guint FridaAslr;
+typedef struct _JprobeExceptionPortSet JprobeExceptionPortSet;
+typedef union _JprobeDebugState JprobeDebugState;
+typedef int JprobeConvertThreadStateDirection;
+typedef guint JprobeAslr;
 
-struct _FridaDispatchContext
+struct _JprobeDispatchContext
 {
   dispatch_queue_t dispatch_queue;
 };
 
-struct _FridaExceptionPortSet
+struct _JprobeExceptionPortSet
 {
   mach_msg_type_number_t count;
   exception_mask_t masks[EXC_TYPES_COUNT];
@@ -123,7 +123,7 @@ struct _FridaExceptionPortSet
   thread_state_flavor_t flavors[EXC_TYPES_COUNT];
 };
 
-union _FridaDebugState
+union _JprobeDebugState
 {
 #ifdef HAVE_I386
   x86_debug_state_t state;
@@ -133,48 +133,48 @@ union _FridaDebugState
 #endif
 };
 
-enum _FridaBreakpointRepeat
+enum _JprobeBreakpointRepeat
 {
-  FRIDA_BREAKPOINT_REPEAT_NEVER,
-  FRIDA_BREAKPOINT_REPEAT_ONCE,
-  FRIDA_BREAKPOINT_REPEAT_ALWAYS
+  JPROBE_BREAKPOINT_REPEAT_NEVER,
+  JPROBE_BREAKPOINT_REPEAT_ONCE,
+  JPROBE_BREAKPOINT_REPEAT_ALWAYS
 };
 
-struct _FridaBreakpoint
+struct _JprobeBreakpoint
 {
   GumAddress address;
-  FridaBreakpointRepeat repeat;
+  JprobeBreakpointRepeat repeat;
   guint32 original;
 };
 
-struct _FridaPagePoolEntry
+struct _JprobePagePoolEntry
 {
   GumAddress page_start;
   GumAddress scratch_page;
 };
 
-struct _FridaSpawnInstance
+struct _JprobeSpawnInstance
 {
-  FridaDarwinHelperBackend * backend;
+  JprobeDarwinHelperBackend * backend;
   guint pid;
   GumCpuType cpu_type;
   mach_port_t thread;
-  FridaDebugState previous_debug_state;
-  FridaDebugState breakpoint_debug_state;
+  JprobeDebugState previous_debug_state;
+  JprobeDebugState breakpoint_debug_state;
 
   mach_port_t server_port;
   dispatch_source_t server_recv_source;
-  FridaExceptionPortSet previous_ports;
+  JprobeExceptionPortSet previous_ports;
 
   __Request__exception_raise_state_identity_t pending_request;
 
   GumMachoModule * dyld;
   size_t dyld_size;
-  FridaDyldFlavor dyld_flavor;
+  JprobeDyldFlavor dyld_flavor;
 
-  FridaBreakpointPhase breakpoint_phase;
-  FridaBreakpoint breakpoints[FRIDA_MAX_BREAKPOINTS];
-  FridaPagePoolEntry page_pool[FRIDA_MAX_PAGE_POOL];
+  JprobeBreakpointPhase breakpoint_phase;
+  JprobeBreakpoint breakpoints[JPROBE_MAX_BREAKPOINTS];
+  JprobePagePoolEntry page_pool[JPROBE_MAX_PAGE_POOL];
   gint single_stepping;
 
   mach_vm_address_t lib_name;
@@ -198,45 +198,45 @@ struct _FridaSpawnInstance
   GumAddress dlerror_clear_address;
   GumAddress helpers_ptr_address;
   GumAddress ret_gadget;
-  FridaRetState ret_state;
+  JprobeRetState ret_state;
   GHashTable * do_modinit_strcmp_checks;
 
   mach_port_t task;
   GumDarwinUnifiedThreadState previous_thread_state;
 };
 
-enum _FridaDyldFlavor
+enum _JprobeDyldFlavor
 {
-  FRIDA_DYLD_V4_PLUS,
-  FRIDA_DYLD_V3_MINUS,
+  JPROBE_DYLD_V4_PLUS,
+  JPROBE_DYLD_V3_MINUS,
 };
 
-enum _FridaBreakpointPhase
+enum _JprobeBreakpointPhase
 {
-  FRIDA_BREAKPOINT_DETECT_FLAVOR,
+  JPROBE_BREAKPOINT_DETECT_FLAVOR,
 
   /* V4+ */
-  FRIDA_BREAKPOINT_SET_LIBDYLD_INITIALIZE_CALLER_BREAKPOINT,
-  FRIDA_BREAKPOINT_LIBSYSTEM_INITIALIZED,
+  JPROBE_BREAKPOINT_SET_LIBDYLD_INITIALIZE_CALLER_BREAKPOINT,
+  JPROBE_BREAKPOINT_LIBSYSTEM_INITIALIZED,
 
   /* V3- */
-  FRIDA_BREAKPOINT_SET_HELPERS,
-  FRIDA_BREAKPOINT_DLOPEN_LIBC,
-  FRIDA_BREAKPOINT_SKIP_CLEAR,
-  FRIDA_BREAKPOINT_DLOPEN_BOOTSTRAPPER,
+  JPROBE_BREAKPOINT_SET_HELPERS,
+  JPROBE_BREAKPOINT_DLOPEN_LIBC,
+  JPROBE_BREAKPOINT_SKIP_CLEAR,
+  JPROBE_BREAKPOINT_DLOPEN_BOOTSTRAPPER,
 
   /* Common */
-  FRIDA_BREAKPOINT_CF_INITIALIZE,
-  FRIDA_BREAKPOINT_CLEANUP,
-  FRIDA_BREAKPOINT_DONE
+  JPROBE_BREAKPOINT_CF_INITIALIZE,
+  JPROBE_BREAKPOINT_CLEANUP,
+  JPROBE_BREAKPOINT_DONE
 };
 
-enum _FridaRetState
+enum _JprobeRetState
 {
-  FRIDA_RET_FROM_HELPER,
+  JPROBE_RET_FROM_HELPER,
 };
 
-struct _FridaSpawnInstanceDyldData
+struct _JprobeSpawnInstanceDyldData
 {
   gchar libc[32];
   guint8 helpers[32];
@@ -244,7 +244,7 @@ struct _FridaSpawnInstanceDyldData
   guint8 error_buf[1024];
 };
 
-struct _FridaInjectInstance
+struct _JprobeInjectInstance
 {
   guint id;
 
@@ -253,7 +253,7 @@ struct _FridaInjectInstance
 
   mach_vm_address_t payload_address;
   mach_vm_size_t payload_size;
-  FridaAgentContext * agent_context;
+  JprobeAgentContext * agent_context;
   mach_vm_address_t remote_agent_context;
   mach_vm_size_t agent_context_size;
   gboolean is_loaded;
@@ -271,10 +271,10 @@ struct _FridaInjectInstance
   mach_msg_type_number_t thread_state_count;
   thread_state_flavor_t thread_state_flavor;
 
-  FridaDarwinHelperBackend * backend;
+  JprobeDarwinHelperBackend * backend;
 };
 
-struct _FridaInjectPayloadLayout
+struct _JprobeInjectPayloadLayout
 {
   guint stack_guard_size;
   guint stack_size;
@@ -289,7 +289,7 @@ struct _FridaInjectPayloadLayout
   guint stack_top_offset;
 };
 
-struct _FridaAgentDetails
+struct _JprobeAgentDetails
 {
   guint pid;
   const gchar * dylib_path;
@@ -298,10 +298,10 @@ struct _FridaAgentDetails
   GumCpuType cpu_type;
 };
 
-struct _FridaAgentContext
+struct _JprobeAgentContext
 {
   /* State */
-  FridaUnloadPolicy unload_policy;
+  JprobeUnloadPolicy unload_policy;
   mach_port_t task;
   mach_port_t mach_thread;
   mach_port_t posix_thread;
@@ -355,7 +355,7 @@ struct _FridaAgentContext
   GumMemoryRange mapped_range_storage;
 };
 
-struct _FridaAgentEmitContext
+struct _JprobeAgentEmitContext
 {
   guint8 * code;
 #ifdef HAVE_I386
@@ -367,103 +367,103 @@ struct _FridaAgentEmitContext
   GumMapper * mapper;
 };
 
-enum _FridaConvertThreadStateDirection
+enum _JprobeConvertThreadStateDirection
 {
-  FRIDA_CONVERT_THREAD_STATE_IN = 1,
-  FRIDA_CONVERT_THREAD_STATE_OUT
+  JPROBE_CONVERT_THREAD_STATE_IN = 1,
+  JPROBE_CONVERT_THREAD_STATE_OUT
 };
 
-enum _FridaAslr
+enum _JprobeAslr
 {
-  FRIDA_ASLR_AUTO,
-  FRIDA_ASLR_DISABLE
+  JPROBE_ASLR_AUTO,
+  JPROBE_ASLR_DISABLE
 };
 
-static FridaSpawnInstance * frida_spawn_instance_new (FridaDarwinHelperBackend * backend);
-static void frida_spawn_instance_close (FridaSpawnInstance * instance);
-static void frida_spawn_instance_resume (FridaSpawnInstance * self);
+static JprobeSpawnInstance * jprobe_spawn_instance_new (JprobeDarwinHelperBackend * backend);
+static void jprobe_spawn_instance_close (JprobeSpawnInstance * instance);
+static void jprobe_spawn_instance_resume (JprobeSpawnInstance * self);
 
-static void frida_spawn_instance_on_server_cancel (void * context);
-static void frida_spawn_instance_on_server_recv (void * context);
-static gboolean frida_spawn_instance_handle_breakpoint (FridaSpawnInstance * self, FridaBreakpoint * breakpoint, GumDarwinUnifiedThreadState * state);
-static gboolean frida_spawn_instance_handle_dyld_restart (FridaSpawnInstance * self);
-static gboolean frida_spawn_instance_handle_modinit (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state, GumAddress pc);
-static void frida_spawn_instance_receive_breakpoint_request (FridaSpawnInstance * self);
-static void frida_spawn_instance_send_breakpoint_response (FridaSpawnInstance * self);
-static gboolean frida_spawn_instance_is_libc_initialized (FridaSpawnInstance * self);
-static void frida_spawn_instance_set_libc_initialized (FridaSpawnInstance * self);
-static kern_return_t frida_spawn_instance_create_dyld_data (FridaSpawnInstance * self);
-static void frida_spawn_instance_destroy_dyld_data (FridaSpawnInstance * self);
+static void jprobe_spawn_instance_on_server_cancel (void * context);
+static void jprobe_spawn_instance_on_server_recv (void * context);
+static gboolean jprobe_spawn_instance_handle_breakpoint (JprobeSpawnInstance * self, JprobeBreakpoint * breakpoint, GumDarwinUnifiedThreadState * state);
+static gboolean jprobe_spawn_instance_handle_dyld_restart (JprobeSpawnInstance * self);
+static gboolean jprobe_spawn_instance_handle_modinit (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state, GumAddress pc);
+static void jprobe_spawn_instance_receive_breakpoint_request (JprobeSpawnInstance * self);
+static void jprobe_spawn_instance_send_breakpoint_response (JprobeSpawnInstance * self);
+static gboolean jprobe_spawn_instance_is_libc_initialized (JprobeSpawnInstance * self);
+static void jprobe_spawn_instance_set_libc_initialized (JprobeSpawnInstance * self);
+static kern_return_t jprobe_spawn_instance_create_dyld_data (JprobeSpawnInstance * self);
+static void jprobe_spawn_instance_destroy_dyld_data (JprobeSpawnInstance * self);
 #if defined (HAVE_IOS) || defined (HAVE_TVOS) || defined (HAVE_XROS)
-static gboolean frida_pick_ios_tvos_bootstrapper (GumModule * module, gpointer user_data);
+static gboolean jprobe_pick_ios_tvos_bootstrapper (GumModule * module, gpointer user_data);
 #endif
-static void frida_spawn_instance_unset_helpers (FridaSpawnInstance * self);
-static void frida_spawn_instance_call_set_helpers (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t helpers);
-static void frida_spawn_instance_call_dlopen (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t lib_name, int mode);
-static gboolean frida_find_cf_initialize (GumModule * module, gpointer user_data);
-static void frida_spawn_instance_call_cf_initialize (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state);
-static void frida_spawn_instance_set_nth_breakpoint (FridaSpawnInstance * self, guint n, GumAddress break_at, FridaBreakpointRepeat repeat);
-static void frida_spawn_instance_enable_nth_breakpoint (FridaSpawnInstance * self, guint n);
-static void frida_spawn_instance_unset_nth_breakpoint (FridaSpawnInstance * self, guint n);
-static void frida_spawn_instance_disable_nth_breakpoint (FridaSpawnInstance * self, guint n);
-static guint32 frida_spawn_instance_put_software_breakpoint (FridaSpawnInstance * self, GumAddress where, guint index);
-static guint32 frida_spawn_instance_overwrite_arm64_instruction (FridaSpawnInstance * self, GumAddress address, guint32 new_instruction);
+static void jprobe_spawn_instance_unset_helpers (JprobeSpawnInstance * self);
+static void jprobe_spawn_instance_call_set_helpers (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t helpers);
+static void jprobe_spawn_instance_call_dlopen (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t lib_name, int mode);
+static gboolean jprobe_find_cf_initialize (GumModule * module, gpointer user_data);
+static void jprobe_spawn_instance_call_cf_initialize (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state);
+static void jprobe_spawn_instance_set_nth_breakpoint (JprobeSpawnInstance * self, guint n, GumAddress break_at, JprobeBreakpointRepeat repeat);
+static void jprobe_spawn_instance_enable_nth_breakpoint (JprobeSpawnInstance * self, guint n);
+static void jprobe_spawn_instance_unset_nth_breakpoint (JprobeSpawnInstance * self, guint n);
+static void jprobe_spawn_instance_disable_nth_breakpoint (JprobeSpawnInstance * self, guint n);
+static guint32 jprobe_spawn_instance_put_software_breakpoint (JprobeSpawnInstance * self, GumAddress where, guint index);
+static guint32 jprobe_spawn_instance_overwrite_arm64_instruction (JprobeSpawnInstance * self, GumAddress address, guint32 new_instruction);
 
-static FridaInjectInstance * frida_inject_instance_new (FridaDarwinHelperBackend * backend, guint id, guint pid);
-static FridaInjectInstance * frida_inject_instance_clone (const FridaInjectInstance * instance, guint id);
-static void frida_inject_instance_close (FridaInjectInstance * instance);
-static gboolean frida_inject_instance_task_did_not_exec (FridaInjectInstance * instance);
+static JprobeInjectInstance * jprobe_inject_instance_new (JprobeDarwinHelperBackend * backend, guint id, guint pid);
+static JprobeInjectInstance * jprobe_inject_instance_clone (const JprobeInjectInstance * instance, guint id);
+static void jprobe_inject_instance_close (JprobeInjectInstance * instance);
+static gboolean jprobe_inject_instance_task_did_not_exec (JprobeInjectInstance * instance);
 
-static gboolean frida_inject_instance_start_thread (FridaInjectInstance * self, GError ** error);
-static void frida_inject_instance_on_thread_monitor_cancel (void * context);
-static void frida_inject_instance_on_mach_thread_dead (void * context);
-static void frida_inject_instance_join_posix_thread (FridaInjectInstance * self, mach_port_t posix_thread);
-static void frida_inject_instance_on_posix_thread_dead (void * context);
+static gboolean jprobe_inject_instance_start_thread (JprobeInjectInstance * self, GError ** error);
+static void jprobe_inject_instance_on_thread_monitor_cancel (void * context);
+static void jprobe_inject_instance_on_mach_thread_dead (void * context);
+static void jprobe_inject_instance_join_posix_thread (JprobeInjectInstance * self, mach_port_t posix_thread);
+static void jprobe_inject_instance_on_posix_thread_dead (void * context);
 
-static gboolean frida_agent_context_init (FridaAgentContext * self, const FridaAgentDetails * details, const FridaInjectPayloadLayout * layout,
+static gboolean jprobe_agent_context_init (JprobeAgentContext * self, const JprobeAgentDetails * details, const JprobeInjectPayloadLayout * layout,
     mach_vm_address_t payload_base, mach_vm_address_t mapped_base, mach_vm_size_t mapped_size, GumDarwinModuleResolver * resolver,
     GumMapper * mapper, GError ** error);
-static gboolean frida_agent_context_init_functions (FridaAgentContext * self, GumDarwinModuleResolver * resolver, GumMapper * mapper,
+static gboolean jprobe_agent_context_init_functions (JprobeAgentContext * self, GumDarwinModuleResolver * resolver, GumMapper * mapper,
     GError ** error);
 
-static void frida_agent_context_emit_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+static void jprobe_agent_context_emit_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper);
-static void frida_agent_context_emit_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+static void jprobe_agent_context_emit_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper);
 
-static gboolean frida_convert_thread_state_for_task (mach_port_t task, thread_state_flavor_t flavor, gconstpointer in_state,
+static gboolean jprobe_convert_thread_state_for_task (mach_port_t task, thread_state_flavor_t flavor, gconstpointer in_state,
     mach_msg_type_number_t in_state_count, gpointer out_state, mach_msg_type_number_t * out_state_count, GError ** error);
-static mach_port_t frida_obtain_thread_port_for_thread_id (mach_port_t task, uint64_t thread_id);
-static kern_return_t frida_get_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gpointer state,
+static mach_port_t jprobe_obtain_thread_port_for_thread_id (mach_port_t task, uint64_t thread_id);
+static kern_return_t jprobe_get_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gpointer state,
     mach_msg_type_number_t * count);
-static kern_return_t frida_set_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gconstpointer state,
+static kern_return_t jprobe_set_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gconstpointer state,
     mach_msg_type_number_t count);
-static kern_return_t frida_get_debug_state (mach_port_t thread, gpointer state, GumCpuType cpu_type);
-static kern_return_t frida_set_debug_state (mach_port_t thread, gconstpointer state, GumCpuType cpu_type);
-static kern_return_t frida_convert_thread_state_inplace (mach_port_t thread, FridaConvertThreadStateDirection direction,
+static kern_return_t jprobe_get_debug_state (mach_port_t thread, gpointer state, GumCpuType cpu_type);
+static kern_return_t jprobe_set_debug_state (mach_port_t thread, gconstpointer state, GumCpuType cpu_type);
+static kern_return_t jprobe_convert_thread_state_inplace (mach_port_t thread, JprobeConvertThreadStateDirection direction,
     thread_state_flavor_t flavor, gpointer state, mach_msg_type_number_t * count);
-static kern_return_t frida_convert_thread_state (mach_port_t thread, FridaConvertThreadStateDirection direction,
+static kern_return_t jprobe_convert_thread_state (mach_port_t thread, JprobeConvertThreadStateDirection direction,
     thread_state_flavor_t flavor, gconstpointer in_state, mach_msg_type_number_t in_state_count,
     gpointer out_state, mach_msg_type_number_t * out_state_count);
-static void frida_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at, GumCpuType cpu_type);
-static void frida_set_hardware_single_step (gpointer debug_state, GumDarwinUnifiedThreadState * thread_state, gboolean enabled, GumCpuType cpu_type);
-static gboolean frida_is_hardware_breakpoint_support_working (void);
+static void jprobe_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at, GumCpuType cpu_type);
+static void jprobe_set_hardware_single_step (gpointer debug_state, GumDarwinUnifiedThreadState * thread_state, gboolean enabled, GumCpuType cpu_type);
+static gboolean jprobe_is_hardware_breakpoint_support_working (void);
 
-static gboolean frida_find_restart_with_dyld_in_cache (const GumMachoSymbolDetails * details, gpointer user_data);
-static GumAddress frida_find_run_initializers_call (mach_port_t task, GumCpuType cpu_type, GumAddress start);
-static GHashTable * frida_find_modinit_strcmp_checks (mach_port_t task, GumMachoModule * dyld);
-static GumAddress frida_find_function_end (mach_port_t task, GumCpuType cpu_type, GumAddress start, gsize max_size);
-static csh frida_create_capstone (GumCpuType cpu_type, GumAddress start);
+static gboolean jprobe_find_restart_with_dyld_in_cache (const GumMachoSymbolDetails * details, gpointer user_data);
+static GumAddress jprobe_find_run_initializers_call (mach_port_t task, GumCpuType cpu_type, GumAddress start);
+static GHashTable * jprobe_find_modinit_strcmp_checks (mach_port_t task, GumMachoModule * dyld);
+static GumAddress jprobe_find_function_end (mach_port_t task, GumCpuType cpu_type, GumAddress start, gsize max_size);
+static csh jprobe_create_capstone (GumCpuType cpu_type, GumAddress start);
 
-static gboolean frida_parse_aslr_option (GVariant * value, FridaAslr * aslr, GError ** error);
+static gboolean jprobe_parse_aslr_option (GVariant * value, JprobeAslr * aslr, GError ** error);
 
-static void frida_mapper_library_blob_deallocate (FridaMappedLibraryBlob * self);
+static void jprobe_mapper_library_blob_deallocate (JprobeMappedLibraryBlob * self);
 
 extern int fileport_makeport (int fd, mach_port_t * port);
 extern int proc_pidpath (int pid, void * buffer, uint32_t buffer_size);
 
 void
-frida_darwin_helper_backend_make_pipe_endpoints (guint local_task, guint remote_pid, guint remote_task, FridaPipeEndpoints * result, GError ** error)
+jprobe_darwin_helper_backend_make_pipe_endpoints (guint local_task, guint remote_pid, guint remote_task, JprobePipeEndpoints * result, GError ** error)
 {
   mach_port_t self_task;
   int status, sockets[2] = { -1, -1 }, i;
@@ -539,7 +539,7 @@ frida_darwin_helper_backend_make_pipe_endpoints (guint local_task, guint remote_
   remote_address = g_strdup_printf ("pipe:port=0x%x", remote_rx);
   local_rx = MACH_PORT_NULL;
   remote_rx = MACH_PORT_NULL;
-  frida_pipe_endpoints_init (result, local_address, remote_address);
+  jprobe_pipe_endpoints_init (result, local_address, remote_address);
   g_free (remote_address);
   g_free (local_address);
 
@@ -548,8 +548,8 @@ frida_darwin_helper_backend_make_pipe_endpoints (guint local_task, guint remote_
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while preparing pipe endpoints for process with pid %u (%s returned '%s')",
         remote_pid, failed_operation, mach_error_string (kr));
     goto beach;
@@ -557,8 +557,8 @@ mach_failure:
 bsd_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while preparing pipe endpoints for process with pid %u (%s returned '%s')",
         remote_pid, failed_operation, g_strerror (errno));
     goto beach;
@@ -594,7 +594,7 @@ beach:
 }
 
 void
-frida_darwin_helper_backend_make_pipe_endpoint_from_socket (guint pid, guint task, GSocket * sock, gchar ** address, GError ** error)
+jprobe_darwin_helper_backend_make_pipe_endpoint_from_socket (guint pid, guint task, GSocket * sock, gchar ** address, GError ** error)
 {
   mach_port_t self_task;
   int status;
@@ -636,8 +636,8 @@ frida_darwin_helper_backend_make_pipe_endpoint_from_socket (guint pid, guint tas
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while preparing pipe endpoint from socket for process with pid %u (%s returned '%s')",
         pid, failed_operation, mach_error_string (kr));
     goto beach;
@@ -645,8 +645,8 @@ mach_failure:
 bsd_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while preparing pipe endpoint from socket for process with pid %u (%s returned '%s')",
         pid, failed_operation, g_strerror (errno));
     goto beach;
@@ -667,7 +667,7 @@ beach:
 }
 
 guint
-frida_darwin_helper_backend_task_for_pid (guint pid, GError ** error)
+jprobe_darwin_helper_backend_task_for_pid (guint pid, GError ** error)
 {
   gboolean remote_pid_exists;
   mach_port_t task;
@@ -686,8 +686,8 @@ frida_darwin_helper_backend_task_for_pid (guint pid, GError ** error)
 invalid_pid:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PROCESS_NOT_FOUND,
+        JPROBE_ERROR,
+        JPROBE_ERROR_PROCESS_NOT_FOUND,
         "Unable to find process with pid %u",
         pid);
     return 0;
@@ -695,8 +695,8 @@ invalid_pid:
 permission_denied:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_PERMISSION_DENIED,
         "Unable to access process with pid %u from the current user account",
         pid);
     return 0;
@@ -704,13 +704,13 @@ permission_denied:
 }
 
 void
-frida_darwin_helper_backend_deallocate_port (guint port)
+jprobe_darwin_helper_backend_deallocate_port (guint port)
 {
   mach_port_deallocate (mach_task_self (), port);
 }
 
 gboolean
-frida_darwin_helper_backend_is_mmap_available (void)
+jprobe_darwin_helper_backend_is_mmap_available (void)
 {
 #ifdef HAVE_MAPPER
   return TRUE;
@@ -720,7 +720,7 @@ frida_darwin_helper_backend_is_mmap_available (void)
 }
 
 void
-frida_darwin_helper_backend_mmap (guint task, GBytes * blob, FridaMappedLibraryBlob * result, GError ** error)
+jprobe_darwin_helper_backend_mmap (guint task, GBytes * blob, JprobeMappedLibraryBlob * result, GError ** error)
 {
   gconstpointer data;
   gsize size, aligned_size, page_size;
@@ -750,45 +750,45 @@ frida_darwin_helper_backend_mmap (guint task, GBytes * blob, FridaMappedLibraryB
     goto permission_denied;
   }
 
-  frida_mapped_library_blob_init (result, mapped_address, size, aligned_size);
+  jprobe_mapped_library_blob_init (result, mapped_address, size, aligned_size);
 
   return;
 
 permission_denied:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PERMISSION_DENIED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_PERMISSION_DENIED,
         "Unable to mmap (%s)",
         mach_error_string (kr));
   }
 }
 
 void
-_frida_darwin_helper_backend_create_dispatch_context (FridaDarwinHelperBackend * self)
+_jprobe_darwin_helper_backend_create_dispatch_context (JprobeDarwinHelperBackend * self)
 {
-  FridaDispatchContext * ctx;
+  JprobeDispatchContext * ctx;
 
-  ctx = g_slice_new (FridaDispatchContext);
-  ctx->dispatch_queue = dispatch_queue_create ("re.frida.helper.queue", DISPATCH_QUEUE_SERIAL);
+  ctx = g_slice_new (JprobeDispatchContext);
+  ctx->dispatch_queue = dispatch_queue_create ("re.jprobe.helper.queue", DISPATCH_QUEUE_SERIAL);
 
   self->dispatch_context = ctx;
 }
 
 void
-_frida_darwin_helper_backend_destroy_dispatch_context (FridaDarwinHelperBackend * self)
+_jprobe_darwin_helper_backend_destroy_dispatch_context (JprobeDarwinHelperBackend * self)
 {
-  FridaDispatchContext * ctx = self->dispatch_context;
+  JprobeDispatchContext * ctx = self->dispatch_context;
 
   dispatch_release (ctx->dispatch_queue);
 
-  g_slice_free (FridaDispatchContext, ctx);
+  g_slice_free (JprobeDispatchContext, ctx);
 }
 
 void
-_frida_darwin_helper_backend_schedule_on_dispatch_queue (FridaDarwinHelperBackend * self, FridaDarwinHelperBackendDispatchWorker worker, gpointer user_data)
+_jprobe_darwin_helper_backend_schedule_on_dispatch_queue (JprobeDarwinHelperBackend * self, JprobeDarwinHelperBackendDispatchWorker worker, gpointer user_data)
 {
-  FridaDispatchContext * ctx = self->dispatch_context;
+  JprobeDispatchContext * ctx = self->dispatch_context;
 
   dispatch_async (ctx->dispatch_queue, ^
   {
@@ -797,32 +797,32 @@ _frida_darwin_helper_backend_schedule_on_dispatch_queue (FridaDarwinHelperBacken
 }
 
 guint
-_frida_darwin_helper_backend_spawn (FridaDarwinHelperBackend * self, const gchar * path,
-    FridaHostSpawnOptions * options, GUnixInputStream * stdin_stream, GUnixOutputStream * stdout_stream,
-    GUnixOutputStream * stderr_stream, FridaStdioPipes ** pipes, GError ** error)
+_jprobe_darwin_helper_backend_spawn (JprobeDarwinHelperBackend * self, const gchar * path,
+    JprobeHostSpawnOptions * options, GUnixInputStream * stdin_stream, GUnixOutputStream * stdout_stream,
+    GUnixOutputStream * stderr_stream, JprobeStdioPipes ** pipes, GError ** error)
 {
   pid_t pid;
-  FridaSpawnInstance * instance;
+  JprobeSpawnInstance * instance;
   gchar ** argv, ** envp;
   posix_spawn_file_actions_t file_actions;
   posix_spawnattr_t attributes;
   sigset_t signal_mask_set;
   short flags;
-  FridaFileDescriptor * in_fd = NULL;
-  FridaFileDescriptor * out_fd = NULL;
-  FridaFileDescriptor * err_fd = NULL;
+  JprobeFileDescriptor * in_fd = NULL;
+  JprobeFileDescriptor * out_fd = NULL;
+  JprobeFileDescriptor * err_fd = NULL;
   GError * stdio_error = NULL;
-  FridaAslr aslr = FRIDA_ASLR_AUTO;
+  JprobeAslr aslr = JPROBE_ASLR_AUTO;
   GVariant * aslr_value;
   gchar * old_cwd = NULL;
   int result;
 
   *pipes = NULL;
 
-  instance = frida_spawn_instance_new (self);
+  instance = jprobe_spawn_instance_new (self);
 
-  argv = frida_host_spawn_options_compute_argv (options, path, NULL);
-  envp = frida_host_spawn_options_compute_envp (options, NULL);
+  argv = jprobe_host_spawn_options_compute_argv (options, path, NULL);
+  envp = jprobe_host_spawn_options_compute_envp (options, NULL);
 
   posix_spawn_file_actions_init (&file_actions);
 
@@ -832,7 +832,7 @@ _frida_darwin_helper_backend_spawn (FridaDarwinHelperBackend * self, const gchar
 
   flags = POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_START_SUSPENDED;
 
-  *pipes = frida_make_stdio_pipes (options->stdio, TRUE, &in_fd, NULL, &out_fd, NULL, &err_fd, NULL, &stdio_error);
+  *pipes = jprobe_make_stdio_pipes (options->stdio, TRUE, &in_fd, NULL, &out_fd, NULL, &err_fd, NULL, &stdio_error);
   if (stdio_error != NULL)
     goto propagate_stdio_error;
 
@@ -850,9 +850,9 @@ _frida_darwin_helper_backend_spawn (FridaDarwinHelperBackend * self, const gchar
     posix_spawn_file_actions_adddup2 (&file_actions, err_fd->handle, 2);
 
   aslr_value = g_hash_table_lookup (options->aux, "aslr");
-  if (aslr_value != NULL && !frida_parse_aslr_option (aslr_value, &aslr, error))
+  if (aslr_value != NULL && !jprobe_parse_aslr_option (aslr_value, &aslr, error))
     goto early_failure;
-  if (aslr == FRIDA_ASLR_DISABLE)
+  if (aslr == JPROBE_ASLR_DISABLE)
     flags |= _POSIX_SPAWN_DISABLE_ASLR;
 
   posix_spawnattr_setflags (&attributes, flags);
@@ -890,8 +890,8 @@ propagate_stdio_error:
 chdir_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        JPROBE_ERROR,
+        JPROBE_ERROR_INVALID_ARGUMENT,
         "Unable to change directory to '%s'",
         options->cwd);
 
@@ -902,16 +902,16 @@ spawn_failed:
     if (result == EAGAIN)
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          FRIDA_ERROR_EXECUTABLE_NOT_SUPPORTED,
+          JPROBE_ERROR,
+          JPROBE_ERROR_EXECUTABLE_NOT_SUPPORTED,
           "Unable to spawn executable at '%s': unsupported file format",
           path);
     }
     else
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          FRIDA_ERROR_NOT_SUPPORTED,
+          JPROBE_ERROR,
+          JPROBE_ERROR_NOT_SUPPORTED,
           "Unable to spawn executable at '%s': %s",
           path, g_strerror (result));
     }
@@ -929,7 +929,7 @@ any_failure:
   {
     if (instance->pid != 0)
       kill (instance->pid, SIGKILL);
-    frida_spawn_instance_close (instance);
+    jprobe_spawn_instance_close (instance);
 
     g_clear_object (pipes);
 
@@ -952,7 +952,7 @@ beach:
 }
 
 gchar *
-frida_darwin_helper_backend_path_for_pid (guint pid, GError ** error)
+jprobe_darwin_helper_backend_path_for_pid (guint pid, GError ** error)
 {
   gchar path[PROC_PIDPATHINFO_MAXSIZE];
 
@@ -964,8 +964,8 @@ frida_darwin_helper_backend_path_for_pid (guint pid, GError ** error)
 invalid_pid:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        JPROBE_ERROR,
+        JPROBE_ERROR_INVALID_ARGUMENT,
         "%s",
         g_strerror (errno));
     return NULL;
@@ -976,27 +976,27 @@ invalid_pid:
 
 #import "springboard.h"
 
-static void frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url, FridaHostSpawnOptions * spawn_options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target);
-static void frida_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url, FridaHostSpawnOptions * spawn_options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target);
+static void jprobe_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url, JprobeHostSpawnOptions * spawn_options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target);
+static void jprobe_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url, JprobeHostSpawnOptions * spawn_options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target);
 #ifdef HAVE_TVOS
-static void frida_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * url, FridaHostSpawnOptions * spawn_options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target);
+static void jprobe_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * url, JprobeHostSpawnOptions * spawn_options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target);
 #endif
 
-static guint frida_kill_application (NSString * identifier);
-static gboolean frida_has_active_prewarm (gint pid);
-static guint8 * frida_skip_string (guint8 * cursor, guint8 * end);
+static guint jprobe_kill_application (NSString * identifier);
+static gboolean jprobe_has_active_prewarm (gint pid);
+static guint8 * jprobe_skip_string (guint8 * cursor, guint8 * end);
 
-static NSArray * frida_argv_to_arguments_array (gchar * const * argv, gint argv_length);
-static NSDictionary * frida_envp_to_environment_dictionary (gchar * const * envp, gint envp_length);
+static NSArray * jprobe_argv_to_arguments_array (gchar * const * argv, gint argv_length);
+static NSDictionary * jprobe_envp_to_environment_dictionary (gchar * const * envp, gint envp_length);
 
-static gboolean frida_find_uikit (const GumDependencyDetails * details, gboolean * has_uikit);
+static gboolean jprobe_find_uikit (const GumDependencyDetails * details, gboolean * has_uikit);
 
 void
-_frida_darwin_helper_backend_launch (const gchar * identifier, FridaHostSpawnOptions * options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
+_jprobe_darwin_helper_backend_launch (const gchar * identifier, JprobeHostSpawnOptions * options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
 {
   NSAutoreleasePool * pool;
   NSString * identifier_value;
@@ -1017,17 +1017,17 @@ _frida_darwin_helper_backend_launch (const gchar * identifier, FridaHostSpawnOpt
   }
 
 #ifdef HAVE_TVOS
-  frida_darwin_helper_backend_launch_using_lsaw (identifier_value, url_value, options, on_complete, on_complete_target);
+  jprobe_darwin_helper_backend_launch_using_lsaw (identifier_value, url_value, options, on_complete, on_complete_target);
   goto beach;
 #endif
 
-  if (_frida_get_springboard_api ()->fbs != NULL)
+  if (_jprobe_get_springboard_api ()->fbs != NULL)
   {
-    frida_darwin_helper_backend_launch_using_fbs (identifier_value, url_value, options, on_complete, on_complete_target);
+    jprobe_darwin_helper_backend_launch_using_fbs (identifier_value, url_value, options, on_complete, on_complete_target);
   }
   else
   {
-    frida_darwin_helper_backend_launch_using_sbs (identifier_value, url_value, options, on_complete, on_complete_target);
+    jprobe_darwin_helper_backend_launch_using_sbs (identifier_value, url_value, options, on_complete, on_complete_target);
   }
 
   goto beach;
@@ -1035,8 +1035,8 @@ _frida_darwin_helper_backend_launch (const gchar * identifier, FridaHostSpawnOpt
 invalid_url:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        JPROBE_ERROR,
+        JPROBE_ERROR_INVALID_ARGUMENT,
         "The 'url' option must be a string");
     goto failure;
   }
@@ -1052,22 +1052,22 @@ beach:
 }
 
 static void
-frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url, FridaHostSpawnOptions * spawn_options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
+jprobe_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url, JprobeHostSpawnOptions * spawn_options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
 {
-  FridaSpringboardApi * api;
+  JprobeSpringboardApi * api;
   NSMutableDictionary * debug_options, * open_options;
-  FridaStdioPipes * pipes = NULL;
+  JprobeStdioPipes * pipes = NULL;
   gchar * stdout_name = NULL;
   gchar * stderr_name = NULL;
   GError * error = NULL;
-  FridaAslr aslr = FRIDA_ASLR_AUTO;
+  JprobeAslr aslr = JPROBE_ASLR_AUTO;
   GVariant * aslr_value;
   FBSSystemService * service;
   mach_port_t client_port;
   FBSOpenResultCallback result_callback;
 
-  api = _frida_get_springboard_api ();
+  api = _jprobe_get_springboard_api ();
 
   debug_options = [NSMutableDictionary dictionary];
 
@@ -1079,7 +1079,7 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
 
   if (spawn_options->has_argv)
   {
-    [debug_options setObject:frida_argv_to_arguments_array (spawn_options->argv, spawn_options->argv_length1)
+    [debug_options setObject:jprobe_argv_to_arguments_array (spawn_options->argv, spawn_options->argv_length1)
                       forKey:api->FBSDebugOptionKeyArguments];
   }
 
@@ -1088,18 +1088,18 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
 
   if (spawn_options->has_env)
   {
-    [debug_options setObject:frida_envp_to_environment_dictionary (spawn_options->env, spawn_options->env_length1)
+    [debug_options setObject:jprobe_envp_to_environment_dictionary (spawn_options->env, spawn_options->env_length1)
                       forKey:api->FBSDebugOptionKeyEnvironment];
   }
 
   if (strlen (spawn_options->cwd) > 0)
     goto cwd_not_supported;
 
-  pipes = frida_make_stdio_pipes (spawn_options->stdio, FALSE, NULL, NULL, NULL, &stdout_name, NULL, &stderr_name, &error);
+  pipes = jprobe_make_stdio_pipes (spawn_options->stdio, FALSE, NULL, NULL, NULL, &stdout_name, NULL, &stderr_name, &error);
   if (error != NULL)
     goto failure;
 
-  if (spawn_options->stdio == FRIDA_STDIO_PIPE)
+  if (spawn_options->stdio == JPROBE_STDIO_PIPE)
   {
     chmod (stdout_name, 0666);
     chmod (stderr_name, 0666);
@@ -1111,9 +1111,9 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
   }
 
   aslr_value = g_hash_table_lookup (spawn_options->aux, "aslr");
-  if (aslr_value != NULL && !frida_parse_aslr_option (aslr_value, &aslr, &error))
+  if (aslr_value != NULL && !jprobe_parse_aslr_option (aslr_value, &aslr, &error))
     goto failure;
-  if (aslr == FRIDA_ASLR_DISABLE)
+  if (aslr == JPROBE_ASLR_DISABLE)
   {
     [debug_options setObject:@YES
                       forKey:api->FBSDebugOptionKeyDisableASLR];
@@ -1125,7 +1125,7 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
 
   result_callback = ^(NSError * error)
   {
-    FridaStdioPipes * pending_pipes = pipes;
+    JprobeStdioPipes * pending_pipes = pipes;
     GError * pending_error = NULL;
 
     if (error == nil)
@@ -1137,8 +1137,8 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
       g_clear_object (&pending_pipes);
 
       pending_error = g_error_new (
-          FRIDA_ERROR,
-          FRIDA_ERROR_NOT_SUPPORTED,
+          JPROBE_ERROR,
+          JPROBE_ERROR_NOT_SUPPORTED,
           "Unable to launch iOS app via FBS: %s",
           [[error localizedDescription] UTF8String]);
     }
@@ -1148,7 +1148,7 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
 
   dispatch_async (dispatch_get_global_queue (DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^
   {
-    frida_kill_application (identifier);
+    jprobe_kill_application (identifier);
 
     if (url != nil)
     {
@@ -1172,16 +1172,16 @@ frida_darwin_helper_backend_launch_using_fbs (NSString * identifier, NSURL * url
 envp_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'envp' option is not supported when spawning iOS apps, use the 'env' option instead");
     goto failure;
   }
 cwd_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'cwd' option is not supported when spawning iOS apps");
     goto failure;
   }
@@ -1203,16 +1203,16 @@ beach:
 }
 
 static void
-frida_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url, FridaHostSpawnOptions * spawn_options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
+jprobe_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url, JprobeHostSpawnOptions * spawn_options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
 {
-  FridaSpringboardApi * api;
+  JprobeSpringboardApi * api;
   NSDictionary * params, * launch_options;
   GError * error = NULL;
-  FridaAslr aslr = FRIDA_ASLR_AUTO;
+  JprobeAslr aslr = JPROBE_ASLR_AUTO;
   GVariant * aslr_value;
 
-  api = _frida_get_springboard_api ();
+  api = _jprobe_get_springboard_api ();
 
   params = [NSDictionary dictionary];
   launch_options = [NSDictionary dictionaryWithObject:@YES
@@ -1230,13 +1230,13 @@ frida_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url
   if (strlen (spawn_options->cwd) > 0)
     goto cwd_not_supported;
 
-  if (spawn_options->stdio != FRIDA_STDIO_INHERIT)
+  if (spawn_options->stdio != JPROBE_STDIO_INHERIT)
     goto stdio_not_supported;
 
   aslr_value = g_hash_table_lookup (spawn_options->aux, "aslr");
-  if (aslr_value != NULL && !frida_parse_aslr_option (aslr_value, &aslr, &error))
+  if (aslr_value != NULL && !jprobe_parse_aslr_option (aslr_value, &aslr, &error))
     goto failure;
-  if (aslr == FRIDA_ASLR_DISABLE)
+  if (aslr == JPROBE_ASLR_DISABLE)
     goto aslr_not_supported;
 
   dispatch_async (dispatch_get_global_queue (DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^
@@ -1244,7 +1244,7 @@ frida_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url
     UInt32 res;
     GError * error = NULL;
 
-    frida_kill_application (identifier);
+    jprobe_kill_application (identifier);
 
     if (url != nil)
     {
@@ -1266,8 +1266,8 @@ frida_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url
     if (res != 0)
     {
       error = g_error_new (
-          FRIDA_ERROR,
-          FRIDA_ERROR_NOT_SUPPORTED,
+          JPROBE_ERROR,
+          JPROBE_ERROR_NOT_SUPPORTED,
           "Unable to launch iOS app via SBS: %s",
           [api->SBSApplicationLaunchingErrorString (res) UTF8String]);
     }
@@ -1280,48 +1280,48 @@ frida_darwin_helper_backend_launch_using_sbs (NSString * identifier, NSURL * url
 argv_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'argv' option is not supported when spawning apps on this version of iOS");
     goto failure;
   }
 envp_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'envp' option is not supported when spawning iOS apps, use the 'env' option instead");
     goto failure;
   }
 env_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'env' option is not supported when spawning apps on this version of iOS");
     goto failure;
   }
 cwd_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'cwd' option is not supported when spawning iOS apps");
     goto failure;
   }
 stdio_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Redirected stdio is not supported when spawning apps on this version of iOS");
     goto failure;
   }
 aslr_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Disabling ASLR is not supported when spawning apps on this version of iOS");
     goto failure;
   }
@@ -1335,10 +1335,10 @@ failure:
 #ifdef HAVE_TVOS
 
 static void
-frida_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * url, FridaHostSpawnOptions * spawn_options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
+jprobe_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * url, JprobeHostSpawnOptions * spawn_options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
 {
-  FridaSpringboardApi * api;
+  JprobeSpringboardApi * api;
   GError * error = NULL;
   BOOL opened = NO;
 
@@ -1354,12 +1354,12 @@ frida_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * ur
   if (strlen (spawn_options->cwd) > 0)
     goto cwd_not_supported;
 
-  if (spawn_options->stdio != FRIDA_STDIO_INHERIT)
+  if (spawn_options->stdio != JPROBE_STDIO_INHERIT)
     goto stdio_not_supported;
 
-  api = _frida_get_springboard_api ();
+  api = _jprobe_get_springboard_api ();
 
-  frida_kill_application (identifier);
+  jprobe_kill_application (identifier);
 
   if (url != nil)
     opened = [[api->LSApplicationWorkspace defaultWorkspace] openURL:url];
@@ -1368,8 +1368,8 @@ frida_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * ur
   if (!opened)
   {
     error = g_error_new (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unable to launch tvOS app via LSAW");
     goto failure;
   }
@@ -1380,40 +1380,40 @@ frida_darwin_helper_backend_launch_using_lsaw (NSString * identifier, NSURL * ur
 argv_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'argv' option is not supported when spawning tvOS apps");
     goto failure;
   }
 envp_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'envp' option is not supported when spawning tvOS apps");
     goto failure;
   }
 env_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'env' option is not supported when spawning tvOS apps");
     goto failure;
   }
 cwd_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'cwd' option is not supported when spawning tvOS apps");
     goto failure;
   }
 stdio_not_supported:
   {
     error = g_error_new_literal (
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "The 'stdio' option is not supported when spawning tvOS apps");
     goto failure;
   }
@@ -1427,17 +1427,17 @@ failure:
 #endif
 
 void
-_frida_darwin_helper_backend_kill_process (guint pid)
+_jprobe_darwin_helper_backend_kill_process (guint pid)
 {
   NSAutoreleasePool * pool;
   NSString * identifier;
 
   pool = [[NSAutoreleasePool alloc] init];
 
-  identifier = _frida_get_springboard_api ()->SBSCopyDisplayIdentifierForProcessID (pid);
+  identifier = _jprobe_get_springboard_api ()->SBSCopyDisplayIdentifierForProcessID (pid);
   if (identifier != nil)
   {
-    frida_kill_application (identifier);
+    jprobe_kill_application (identifier);
 
     [identifier release];
   }
@@ -1450,14 +1450,14 @@ _frida_darwin_helper_backend_kill_process (guint pid)
 }
 
 guint
-_frida_darwin_helper_backend_kill_application (const gchar * identifier)
+_jprobe_darwin_helper_backend_kill_application (const gchar * identifier)
 {
   guint killed_pid;
   NSAutoreleasePool * pool;
 
   pool = [[NSAutoreleasePool alloc] init];
 
-  killed_pid = frida_kill_application ([NSString stringWithUTF8String:identifier]);
+  killed_pid = jprobe_kill_application ([NSString stringWithUTF8String:identifier]);
 
   [pool release];
 
@@ -1465,15 +1465,15 @@ _frida_darwin_helper_backend_kill_application (const gchar * identifier)
 }
 
 static guint
-frida_kill_application (NSString * identifier)
+jprobe_kill_application (NSString * identifier)
 {
   gint killed_pid = 0;
-  FridaSpringboardApi * api;
+  JprobeSpringboardApi * api;
   GTimer * timer;
   const double kill_timeout = 3.0;
   struct kinfo_proc * processes = NULL;
 
-  api = _frida_get_springboard_api ();
+  api = _jprobe_get_springboard_api ();
 
   if (api->FBSSystemService != nil)
   {
@@ -1485,7 +1485,7 @@ frida_kill_application (NSString * identifier)
     if (killed_pid <= 0)
       goto beach;
 
-    if (frida_has_active_prewarm (killed_pid))
+    if (jprobe_has_active_prewarm (killed_pid))
     {
       kill (killed_pid, SIGKILL);
     }
@@ -1494,7 +1494,7 @@ frida_kill_application (NSString * identifier)
       [service terminateApplication:identifier
                           forReason:FBProcessKillReasonUser
                           andReport:NO
-                    withDescription:@"killed from Frida"];
+                    withDescription:@"killed from Jprobe"];
 
     }
 
@@ -1575,7 +1575,7 @@ beach:
 }
 
 static gboolean
-frida_has_active_prewarm (gint pid)
+jprobe_has_active_prewarm (gint pid)
 {
   gboolean prewarm_active = FALSE;
   int mib_argmax[] = { CTL_KERN, KERN_ARGMAX };
@@ -1607,11 +1607,11 @@ frida_has_active_prewarm (gint pid)
   cursor = buffer + sizeof (argc);
 
   /* Skip executable name */
-  cursor = frida_skip_string (cursor, end);
+  cursor = jprobe_skip_string (cursor, end);
 
   /* Skip args */
   while (argc-- != 0)
-    cursor = frida_skip_string (cursor, end);
+    cursor = jprobe_skip_string (cursor, end);
 
   /* Iterate environment */
   while (cursor != end)
@@ -1621,7 +1621,7 @@ frida_has_active_prewarm (gint pid)
       prewarm_active = true;
       break;
     }
-    cursor = frida_skip_string (cursor, end);
+    cursor = jprobe_skip_string (cursor, end);
   }
 
 beach:
@@ -1631,7 +1631,7 @@ beach:
 }
 
 static guint8 *
-frida_skip_string (guint8 * cursor, guint8 * end)
+jprobe_skip_string (guint8 * cursor, guint8 * end)
 {
   while (cursor != end && *cursor != '\0')
     cursor++;
@@ -1640,7 +1640,7 @@ frida_skip_string (guint8 * cursor, guint8 * end)
 }
 
 static NSArray *
-frida_argv_to_arguments_array (gchar * const * argv, gint argv_length)
+jprobe_argv_to_arguments_array (gchar * const * argv, gint argv_length)
 {
   NSMutableArray * result;
   gint i;
@@ -1653,7 +1653,7 @@ frida_argv_to_arguments_array (gchar * const * argv, gint argv_length)
 }
 
 static NSDictionary *
-frida_envp_to_environment_dictionary (gchar * const * envp, gint envp_length)
+jprobe_envp_to_environment_dictionary (gchar * const * envp, gint envp_length)
 {
   NSMutableDictionary * result;
   gint i;
@@ -1694,7 +1694,7 @@ frida_envp_to_environment_dictionary (gchar * const * envp, gint envp_length)
 }
 
 gboolean
-frida_darwin_helper_backend_is_application_process (guint pid)
+jprobe_darwin_helper_backend_is_application_process (guint pid)
 {
   gboolean is_app;
   gchar path[PROC_PIDPATHINFO_MAXSIZE];
@@ -1708,7 +1708,7 @@ frida_darwin_helper_backend_is_application_process (guint pid)
     return FALSE;
 
   is_app = FALSE;
-  gum_macho_module_enumerate_dependencies (module, (GumFoundDependencyFunc) frida_find_uikit, &is_app);
+  gum_macho_module_enumerate_dependencies (module, (GumFoundDependencyFunc) jprobe_find_uikit, &is_app);
 
   g_object_unref (module);
 
@@ -1716,7 +1716,7 @@ frida_darwin_helper_backend_is_application_process (guint pid)
 }
 
 static gboolean
-frida_find_uikit (const GumDependencyDetails * details, gboolean * has_uikit)
+jprobe_find_uikit (const GumDependencyDetails * details, gboolean * has_uikit)
 {
   *has_uikit = strcmp (details->name, "/System/Library/Frameworks/UIKit.framework/UIKit") == 0;
   return !*has_uikit;
@@ -1725,33 +1725,33 @@ frida_find_uikit (const GumDependencyDetails * details, gboolean * has_uikit)
 #else
 
 void
-_frida_darwin_helper_backend_launch (const gchar * identifier, FridaHostSpawnOptions * options,
-    FridaDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
+_jprobe_darwin_helper_backend_launch (const gchar * identifier, JprobeHostSpawnOptions * options,
+    JprobeDarwinHelperBackendLaunchCompletionHandler on_complete, void * on_complete_target)
 {
   GError * error;
 
   error = g_error_new_literal (
-      FRIDA_ERROR,
-      FRIDA_ERROR_NOT_SUPPORTED,
+      JPROBE_ERROR,
+      JPROBE_ERROR_NOT_SUPPORTED,
       "Not yet able to launch apps on Mac");
 
   on_complete (NULL, error, on_complete_target);
 }
 
 void
-_frida_darwin_helper_backend_kill_process (guint pid)
+_jprobe_darwin_helper_backend_kill_process (guint pid)
 {
   kill (pid, SIGKILL);
 }
 
 guint
-_frida_darwin_helper_backend_kill_application (const gchar * identifier)
+_jprobe_darwin_helper_backend_kill_application (const gchar * identifier)
 {
   return 0;
 }
 
 gboolean
-frida_darwin_helper_backend_is_application_process (guint pid)
+jprobe_darwin_helper_backend_is_application_process (guint pid)
 {
   return FALSE;
 }
@@ -1759,7 +1759,7 @@ frida_darwin_helper_backend_is_application_process (guint pid)
 #endif
 
 gint
-frida_darwin_helper_backend_get_suspend_count (guint task, GError ** error)
+jprobe_darwin_helper_backend_get_suspend_count (guint task, GError ** error)
 {
   mach_task_basic_info_data_t info;
   mach_msg_type_number_t info_count = MACH_TASK_BASIC_INFO_COUNT;
@@ -1783,15 +1783,15 @@ mach_failure:
     if (kr == MACH_SEND_INVALID_DEST)
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          FRIDA_ERROR_PROCESS_NOT_FOUND,
+          JPROBE_ERROR,
+          JPROBE_ERROR_PROCESS_NOT_FOUND,
           "Mach task is gone");
     }
     else
     {
       g_set_error (error,
-          FRIDA_ERROR,
-          FRIDA_ERROR_NOT_SUPPORTED,
+          JPROBE_ERROR,
+          JPROBE_ERROR_NOT_SUPPORTED,
           "Unexpected error while interrogating target process (%s returned '%s')",
           failed_operation, mach_error_string (kr));
     }
@@ -1800,21 +1800,21 @@ mach_failure:
 }
 
 void
-frida_darwin_helper_backend_suspend_process_fast (guint task, GError ** error)
+jprobe_darwin_helper_backend_suspend_process_fast (guint task, GError ** error)
 {
   kern_return_t kr;
 
   kr = task_suspend (task);
   if (kr != KERN_SUCCESS)
   {
-    g_set_error (error, FRIDA_ERROR, FRIDA_ERROR_NOT_SUPPORTED,
+    g_set_error (error, JPROBE_ERROR, JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while suspending process: %s",
         mach_error_string (kr));
   }
 }
 
 void
-frida_darwin_helper_backend_resume_process (guint task, GError ** error)
+jprobe_darwin_helper_backend_resume_process (guint task, GError ** error)
 {
   mach_task_basic_info_data_t info;
   mach_msg_type_number_t info_count = MACH_TASK_BASIC_INFO_COUNT;
@@ -1832,23 +1832,23 @@ frida_darwin_helper_backend_resume_process (guint task, GError ** error)
 process_not_found:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_PROCESS_NOT_FOUND,
+        JPROBE_ERROR,
+        JPROBE_ERROR_PROCESS_NOT_FOUND,
         "No such process");
     return;
   }
 process_not_suspended:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_OPERATION,
+        JPROBE_ERROR,
+        JPROBE_ERROR_INVALID_OPERATION,
         "Process is not suspended");
     return;
   }
 }
 
 void
-frida_darwin_helper_backend_resume_process_fast (guint task, GError ** error)
+jprobe_darwin_helper_backend_resume_process_fast (guint task, GError ** error)
 {
   kern_return_t kr;
 
@@ -1861,8 +1861,8 @@ frida_darwin_helper_backend_resume_process_fast (guint task, GError ** error)
 unexpected_error:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while resuming process: %s",
         mach_error_string (kr));
     return;
@@ -1870,11 +1870,11 @@ unexpected_error:
 }
 
 void *
-_frida_darwin_helper_backend_create_spawn_instance (FridaDarwinHelperBackend * self, guint pid)
+_jprobe_darwin_helper_backend_create_spawn_instance (JprobeDarwinHelperBackend * self, guint pid)
 {
-  FridaSpawnInstance * instance;
+  JprobeSpawnInstance * instance;
 
-  instance = frida_spawn_instance_new (self);
+  instance = jprobe_spawn_instance_new (self);
   instance->pid = pid;
 
   gee_abstract_map_set (GEE_ABSTRACT_MAP (self->spawn_instances), GUINT_TO_POINTER (pid), instance);
@@ -1883,10 +1883,10 @@ _frida_darwin_helper_backend_create_spawn_instance (FridaDarwinHelperBackend * s
 }
 
 void
-_frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHelperBackend * self, void * opaque_instance, guint task, GError ** error)
+_jprobe_darwin_helper_backend_prepare_spawn_instance_for_injection (JprobeDarwinHelperBackend * self, void * opaque_instance, guint task, GError ** error)
 {
-  FridaSpawnInstance * instance = opaque_instance;
-  FridaDispatchContext * ctx = self->dispatch_context;
+  JprobeSpawnInstance * instance = opaque_instance;
+  JprobeDispatchContext * ctx = self->dispatch_context;
   const gchar * failed_operation;
   kern_return_t kr;
   mach_port_t self_task, child_thread;
@@ -1906,21 +1906,21 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
   };
   GumMachoModule * dyld;
   const GumMachoSegment * segment;
-  FridaExceptionPortSet * previous_ports;
+  JprobeExceptionPortSet * previous_ports;
   dispatch_source_t source;
 
   /*
    * We POSIX_SPAWN_START_SUSPENDED which means that the kernel will create
    * the task and its main thread, with the main thread's instruction pointer
    * pointed at __dyld_start. At this point neither dyld nor libc have been
-   * initialized, so we won't be able to inject frida-agent at this point.
+   * initialized, so we won't be able to inject jprobe-agent at this point.
    *
    * So here's what we'll do before we try to inject our dylib:
    * - Get hold of the main thread to read its instruction pointer, which will
    *   tell us where dyld is in memory.
    * - Walk backwards to find dyld's Mach-O header.
    * - Walk its symbols and find a function that's called at a point where the process is
-   *   sufficiently initialized to load frida-agent, but still early enough so the app's
+   *   sufficiently initialized to load jprobe-agent, but still early enough so the app's
    *   initializer(s) didn't get a chance to run.
    * - For processes using dyld v3's closure support we put a hardware breakpoint inside
    *   dyld::launchWithClosure() right after setInitialImageList() has been called.
@@ -1976,7 +1976,7 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
    * dlopen_internal().
    *
    * Update, 2021: Monterey and iOS 15 introduced dyld v4, which we now have preliminary
-   *               support for. Search for “FRIDA_DYLD_V4_PLUS” for more details.
+   *               support for. Search for “JPROBE_DYLD_V4_PLUS” for more details.
    *
    * Then later when resume() is called:
    * - Send a response to the message we got on our exception port, so the
@@ -2004,7 +2004,7 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
   vm_deallocate (self_task, (vm_address_t) threads, thread_count * sizeof (thread_t));
   threads = NULL;
 
-  kr = frida_get_thread_state (child_thread, state_flavor, &state, &state_count);
+  kr = jprobe_get_thread_state (child_thread, state_flavor, &state, &state_count);
   CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "get_thread_state");
 
 #ifdef HAVE_I386
@@ -2047,8 +2047,8 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
   modern_entry_address = gum_macho_module_resolve_symbol_address (dyld, "__ZN5dyld44APIs19_libdyld_initializeEv");
   if (modern_entry_address == 0)
     modern_entry_address = gum_macho_module_resolve_symbol_address (dyld, "__ZN5dyld44APIs19_libdyld_initializeEPKNS_16LibSystemHelpersE");
-  instance->dyld_flavor = (modern_entry_address != 0) ? FRIDA_DYLD_V4_PLUS : FRIDA_DYLD_V3_MINUS;
-  if (instance->dyld_flavor == FRIDA_DYLD_V4_PLUS)
+  instance->dyld_flavor = (modern_entry_address != 0) ? JPROBE_DYLD_V4_PLUS : JPROBE_DYLD_V3_MINUS;
+  if (instance->dyld_flavor == JPROBE_DYLD_V4_PLUS)
   {
     instance->notify_objc_init = gum_macho_module_resolve_symbol_address (dyld, "__ZN5dyld412RuntimeState14notifyObjCInitEPKNS_6LoaderE");
     if (instance->notify_objc_init != 0)
@@ -2084,7 +2084,7 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
 
     if (launch_with_closure_address != 0)
     {
-      modern_entry_address = frida_find_run_initializers_call (task, instance->cpu_type, launch_with_closure_address);
+      modern_entry_address = jprobe_find_run_initializers_call (task, instance->cpu_type, launch_with_closure_address);
     }
 
     instance->modern_entry_address = modern_entry_address;
@@ -2096,7 +2096,7 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
     instance->dlerror_clear_address = gum_macho_module_resolve_symbol_address (dyld, "__ZL12dlerrorClearv");
     instance->info_address = gum_macho_module_resolve_symbol_address (dyld, "__ZN4dyld12gProcessInfoE");
     instance->helpers_ptr_address = gum_macho_module_resolve_symbol_address (dyld, "__ZN4dyld17gLibSystemHelpersE");
-    instance->do_modinit_strcmp_checks = frida_find_modinit_strcmp_checks (task, dyld);
+    instance->do_modinit_strcmp_checks = jprobe_find_modinit_strcmp_checks (task, dyld);
 
     if (legacy_entry_address == 0 || instance->dlopen_address == 0 || instance->register_helpers_address == 0 ||
         instance->info_address == 0 || instance->do_modinit_strcmp_checks == NULL)
@@ -2110,7 +2110,7 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
       instance->register_helpers_address |= 1;
     }
 
-    instance->ret_gadget = frida_find_function_end (task, instance->cpu_type, instance->register_helpers_address, 128);
+    instance->ret_gadget = jprobe_find_function_end (task, instance->cpu_type, instance->register_helpers_address, 128);
     if (instance->ret_gadget == 0)
       goto dyld_probe_failed;
 
@@ -2121,29 +2121,29 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
   sim_notify_address = gum_macho_module_resolve_symbol_address (dyld, "__ZN5dyld4L29sim_notifyMonitorOfMainCalledEv");
   instance->sim_notify_address = sim_notify_address;
 
-  instance->ret_state = FRIDA_RET_FROM_HELPER;
+  instance->ret_state = JPROBE_RET_FROM_HELPER;
 
-  kr = frida_get_debug_state (child_thread, &instance->previous_debug_state, instance->cpu_type);
-  CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "frida_get_debug_state");
+  kr = jprobe_get_debug_state (child_thread, &instance->previous_debug_state, instance->cpu_type);
+  CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "jprobe_get_debug_state");
 
   memcpy (&instance->breakpoint_debug_state, &instance->previous_debug_state, sizeof (instance->breakpoint_debug_state));
   i = 0;
   if (legacy_entry_address != 0)
-    frida_spawn_instance_set_nth_breakpoint (instance, i++, legacy_entry_address, FRIDA_BREAKPOINT_REPEAT_ALWAYS);
+    jprobe_spawn_instance_set_nth_breakpoint (instance, i++, legacy_entry_address, JPROBE_BREAKPOINT_REPEAT_ALWAYS);
   if (modern_entry_address != 0)
-    frida_spawn_instance_set_nth_breakpoint (instance, i++, modern_entry_address, FRIDA_BREAKPOINT_REPEAT_ALWAYS);
+    jprobe_spawn_instance_set_nth_breakpoint (instance, i++, modern_entry_address, JPROBE_BREAKPOINT_REPEAT_ALWAYS);
   if (sim_notify_address != 0)
-    frida_spawn_instance_set_nth_breakpoint (instance, i++, sim_notify_address, FRIDA_BREAKPOINT_REPEAT_ALWAYS);
-  if (instance->dyld_flavor == FRIDA_DYLD_V4_PLUS)
+    jprobe_spawn_instance_set_nth_breakpoint (instance, i++, sim_notify_address, JPROBE_BREAKPOINT_REPEAT_ALWAYS);
+  if (instance->dyld_flavor == JPROBE_DYLD_V4_PLUS)
   {
     GumAddress restart_with_dyld_in_cache = 0;
-    gum_macho_module_enumerate_symbols (dyld, frida_find_restart_with_dyld_in_cache, &restart_with_dyld_in_cache);
+    gum_macho_module_enumerate_symbols (dyld, jprobe_find_restart_with_dyld_in_cache, &restart_with_dyld_in_cache);
     if (restart_with_dyld_in_cache != 0)
-      frida_spawn_instance_set_nth_breakpoint (instance, i++, restart_with_dyld_in_cache, FRIDA_BREAKPOINT_REPEAT_NEVER);
+      jprobe_spawn_instance_set_nth_breakpoint (instance, i++, restart_with_dyld_in_cache, JPROBE_BREAKPOINT_REPEAT_NEVER);
   }
 
-  kr = frida_set_debug_state (child_thread, &instance->breakpoint_debug_state, instance->cpu_type);
-  CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "frida_set_debug_state");
+  kr = jprobe_set_debug_state (child_thread, &instance->breakpoint_debug_state, instance->cpu_type);
+  CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "jprobe_set_debug_state");
 
   kr = mach_port_allocate (self_task, MACH_PORT_RIGHT_RECEIVE, &instance->server_port);
   CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "mach_port_allocate server");
@@ -2171,8 +2171,8 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
   source = dispatch_source_create (DISPATCH_SOURCE_TYPE_MACH_RECV, instance->server_port, 0, ctx->dispatch_queue);
   instance->server_recv_source = source;
   dispatch_set_context (source, instance);
-  dispatch_source_set_cancel_handler_f (source, frida_spawn_instance_on_server_cancel);
-  dispatch_source_set_event_handler_f (source, frida_spawn_instance_on_server_recv);
+  dispatch_source_set_cancel_handler_f (source, jprobe_spawn_instance_on_server_cancel);
+  dispatch_source_set_event_handler_f (source, jprobe_spawn_instance_on_server_recv);
   dispatch_resume (source);
 
   return;
@@ -2180,32 +2180,32 @@ _frida_darwin_helper_backend_prepare_spawn_instance_for_injection (FridaDarwinHe
 cpu_probe_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while probing CPU type of target process");
     goto failure;
   }
 page_size_probe_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while probing page size of target process");
     goto failure;
   }
 dyld_probe_failed:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while probing dyld of target process");
     goto failure;
   }
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while preparing target process for injection (%s returned '%s')",
         failed_operation, mach_error_string (kr));
     goto failure;
@@ -2217,32 +2217,32 @@ failure:
 }
 
 void
-_frida_darwin_helper_backend_resume_spawn_instance (FridaDarwinHelperBackend * self, void * instance)
+_jprobe_darwin_helper_backend_resume_spawn_instance (JprobeDarwinHelperBackend * self, void * instance)
 {
-  frida_spawn_instance_resume (instance);
+  jprobe_spawn_instance_resume (instance);
 }
 
 void
-_frida_darwin_helper_backend_close_spawn_instance (FridaDarwinHelperBackend * self, void * instance)
+_jprobe_darwin_helper_backend_close_spawn_instance (JprobeDarwinHelperBackend * self, void * instance)
 {
-  frida_spawn_instance_close (instance);
+  jprobe_spawn_instance_close (instance);
 }
 
 guint
-_frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, guint pid, guint task, const gchar * path_or_name, FridaMappedLibraryBlob * blob,
+_jprobe_darwin_helper_backend_inject_into_task (JprobeDarwinHelperBackend * self, guint pid, guint task, const gchar * path_or_name, JprobeMappedLibraryBlob * blob,
     const gchar * entrypoint, const gchar * data, GError ** error)
 {
   guint result = 0;
   mach_port_t self_task;
-  FridaInjectInstance * instance;
+  JprobeInjectInstance * instance;
   GumDarwinModuleResolver * resolver = NULL;
   GumMapper * mapper = NULL;
   GumNativeProcessMemory * target = NULL;
   GError * io_error = NULL;
-  FridaDarwinModuleDetails mapped_module;
-  FridaAgentDetails details = { 0, };
+  JprobeDarwinModuleDetails mapped_module;
+  JprobeAgentDetails details = { 0, };
   guint page_size;
-  FridaInjectPayloadLayout layout;
+  JprobeInjectPayloadLayout layout;
   kern_return_t kr;
   const gchar * failed_operation;
   guint base_payload_size;
@@ -2252,12 +2252,12 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
   vm_prot_t cur_protection, max_protection;
   guint8 mach_stub_code[512] = { 0, };
   guint8 pthread_stub_code[512] = { 0, };
-  FridaAgentContext agent_ctx;
+  JprobeAgentContext agent_ctx;
   GumAddress pc, sp, data_arg;
 
   self_task = mach_task_self ();
 
-  instance = frida_inject_instance_new (self, self->next_id++, pid);
+  instance = jprobe_inject_instance_new (self, self->next_id++, pid);
   mach_port_mod_refs (self_task, task, MACH_PORT_RIGHT_SEND, 1);
   instance->task = task;
 
@@ -2278,7 +2278,7 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
   {
     mapper = gum_mapper_new_take_blob (path_or_name,
         g_bytes_new_with_free_func (GSIZE_TO_POINTER (blob->address), blob->size,
-            (GDestroyNotify) frida_mapper_library_blob_deallocate, frida_mapped_library_blob_dup (blob)),
+            (GDestroyNotify) jprobe_mapper_library_blob_deallocate, jprobe_mapped_library_blob_dup (blob)),
         GUM_MODULE_RESOLVER (resolver), &io_error);
   }
   else
@@ -2291,7 +2291,7 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
   target = gum_native_process_memory_new_remote (pid, GSIZE_TO_POINTER (task));
   gum_mapper_set_target (mapper, GUM_PROCESS_MEMORY (target));
 #else
-  (void) frida_mapper_library_blob_deallocate;
+  (void) jprobe_mapper_library_blob_deallocate;
 #endif
 
   layout.stack_guard_size = page_size;
@@ -2301,7 +2301,7 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
   layout.mach_code_offset = 0;
   layout.pthread_code_offset = 512;
   layout.data_offset = page_size;
-  layout.data_size = GUM_ALIGN_SIZE (sizeof (FridaAgentContext), page_size);
+  layout.data_size = GUM_ALIGN_SIZE (sizeof (JprobeAgentContext), page_size);
   layout.stack_guard_offset = layout.data_offset + layout.data_size;
   layout.stack_bottom_offset = layout.stack_guard_offset + layout.stack_guard_size;
   layout.stack_top_offset = layout.stack_bottom_offset + layout.stack_size;
@@ -2333,7 +2333,7 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
 
   kr = mach_vm_allocate (self_task, &agent_context_address, layout.data_size, VM_FLAGS_ANYWHERE);
   g_assert (kr == KERN_SUCCESS);
-  instance->agent_context = (FridaAgentContext *) agent_context_address;
+  instance->agent_context = (JprobeAgentContext *) agent_context_address;
   instance->agent_context_size = layout.data_size;
 
   data_address = payload_address + layout.data_offset;
@@ -2358,13 +2358,13 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
   kr = mach_vm_protect (task, payload_address + layout.stack_guard_offset, layout.stack_guard_size, FALSE, VM_PROT_NONE);
   CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "mach_vm_protect");
 
-  if (!frida_agent_context_init (&agent_ctx, &details, &layout, payload_address, instance->payload_address, instance->payload_size,
+  if (!jprobe_agent_context_init (&agent_ctx, &details, &layout, payload_address, instance->payload_address, instance->payload_size,
       resolver, mapper, error))
     goto failure;
 
-  frida_agent_context_emit_mach_stub_code (&agent_ctx, mach_stub_code, resolver, mapper);
+  jprobe_agent_context_emit_mach_stub_code (&agent_ctx, mach_stub_code, resolver, mapper);
 
-  frida_agent_context_emit_pthread_stub_code (&agent_ctx, pthread_stub_code, resolver, mapper);
+  jprobe_agent_context_emit_pthread_stub_code (&agent_ctx, pthread_stub_code, resolver, mapper);
 
   if (gum_query_is_rwx_supported () || !gum_code_segment_is_supported ())
   {
@@ -2488,7 +2488,7 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
     state32->__sp = sp;
     state32->__lr = 0xcafebabe;
     state32->__pc = pc;
-    state32->__cpsr = FRIDA_PSR_THUMB;
+    state32->__cpsr = JPROBE_PSR_THUMB;
 
     instance->thread_state_data = (thread_state_t) state32;
     instance->thread_state_count = ARM_THREAD_STATE_COUNT;
@@ -2496,13 +2496,13 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
   }
 #endif
 
-  if (!frida_inject_instance_start_thread (instance, error))
+  if (!jprobe_inject_instance_start_thread (instance, error))
     goto failure;
 
   gee_abstract_map_set (GEE_ABSTRACT_MAP (self->inject_instances), GUINT_TO_POINTER (instance->id), instance);
 
   instance->is_loaded = TRUE;
-  _frida_darwin_helper_backend_on_inject_instance_loaded (self, instance->id, instance->pid, (mapper != NULL) ? &mapped_module : NULL);
+  _jprobe_darwin_helper_backend_on_inject_instance_loaded (self, instance->id, instance->pid, (mapper != NULL) ? &mapped_module : NULL);
 
   result = instance->id;
   goto beach;
@@ -2510,8 +2510,8 @@ _frida_darwin_helper_backend_inject_into_task (FridaDarwinHelperBackend * self, 
 gum_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "%s",
         io_error->message);
     g_error_free (io_error);
@@ -2520,15 +2520,15 @@ gum_failure:
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while attaching to process with pid %u (%s returned '%s')",
         pid, failed_operation, mach_error_string (kr));
     goto failure;
   }
 failure:
   {
-    frida_inject_instance_close (instance);
+    jprobe_inject_instance_close (instance);
     goto beach;
   }
 beach:
@@ -2542,9 +2542,9 @@ beach:
 }
 
 void
-_frida_darwin_helper_backend_demonitor (FridaDarwinHelperBackend * self, void * raw_instance)
+_jprobe_darwin_helper_backend_demonitor (JprobeDarwinHelperBackend * self, void * raw_instance)
 {
-  FridaInjectInstance * instance = raw_instance;
+  JprobeInjectInstance * instance = raw_instance;
 
   dispatch_release (instance->thread_monitor_source);
   instance->thread_monitor_source = NULL;
@@ -2554,10 +2554,10 @@ _frida_darwin_helper_backend_demonitor (FridaDarwinHelperBackend * self, void * 
 }
 
 guint
-_frida_darwin_helper_backend_demonitor_and_clone_injectee_state (FridaDarwinHelperBackend * self, void * raw_instance)
+_jprobe_darwin_helper_backend_demonitor_and_clone_injectee_state (JprobeDarwinHelperBackend * self, void * raw_instance)
 {
-  FridaInjectInstance * instance = raw_instance;
-  FridaInjectInstance * clone;
+  JprobeInjectInstance * instance = raw_instance;
+  JprobeInjectInstance * clone;
 
   dispatch_release (instance->thread_monitor_source);
   instance->thread_monitor_source = NULL;
@@ -2565,7 +2565,7 @@ _frida_darwin_helper_backend_demonitor_and_clone_injectee_state (FridaDarwinHelp
   mach_port_deallocate (mach_task_self (), instance->thread);
   instance->thread = MACH_PORT_NULL;
 
-  clone = frida_inject_instance_clone (instance, self->next_id++);
+  clone = jprobe_inject_instance_clone (instance, self->next_id++);
 
   gee_abstract_map_set (GEE_ABSTRACT_MAP (self->inject_instances), GUINT_TO_POINTER (clone->id), clone);
 
@@ -2573,16 +2573,16 @@ _frida_darwin_helper_backend_demonitor_and_clone_injectee_state (FridaDarwinHelp
 }
 
 void
-_frida_darwin_helper_backend_recreate_injectee_thread (FridaDarwinHelperBackend * self, void * raw_instance, guint pid, guint task, GError ** error)
+_jprobe_darwin_helper_backend_recreate_injectee_thread (JprobeDarwinHelperBackend * self, void * raw_instance, guint pid, guint task, GError ** error)
 {
-  FridaInjectInstance * instance = raw_instance;
-  FridaAgentContext * agent_context = instance->agent_context;
+  JprobeInjectInstance * instance = raw_instance;
+  JprobeAgentContext * agent_context = instance->agent_context;
   mach_port_t self_task;
   gboolean is_uninitialized_clone;
   const gchar * failed_operation;
   kern_return_t kr;
 
-  agent_context->unload_policy = FRIDA_UNLOAD_POLICY_IMMEDIATE;
+  agent_context->unload_policy = JPROBE_UNLOAD_POLICY_IMMEDIATE;
   agent_context->task = MACH_PORT_NULL;
   agent_context->mach_thread = MACH_PORT_NULL;
   agent_context->posix_thread = MACH_PORT_NULL;
@@ -2606,7 +2606,7 @@ _frida_darwin_helper_backend_recreate_injectee_thread (FridaDarwinHelperBackend 
     CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "mach_vm_remap(data)");
   }
 
-  if (!frida_inject_instance_start_thread (instance, error))
+  if (!jprobe_inject_instance_start_thread (instance, error))
     goto failure;
 
   goto beach;
@@ -2614,15 +2614,15 @@ _frida_darwin_helper_backend_recreate_injectee_thread (FridaDarwinHelperBackend 
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while recreating thread in process with pid %u (%s returned '%s')",
         pid, failed_operation, mach_error_string (kr));
     goto failure;
   }
 failure:
   {
-    _frida_darwin_helper_backend_destroy_inject_instance (self, instance->id);
+    _jprobe_darwin_helper_backend_destroy_inject_instance (self, instance->id);
     goto beach;
   }
 beach:
@@ -2632,20 +2632,20 @@ beach:
 }
 
 static gboolean
-frida_inject_instance_start_thread (FridaInjectInstance * self, GError ** error)
+jprobe_inject_instance_start_thread (JprobeInjectInstance * self, GError ** error)
 {
   gboolean success = FALSE;
   thread_state_t thread_state;
   mach_msg_type_number_t thread_state_count;
   kern_return_t kr;
   const gchar * failed_operation;
-  FridaDispatchContext * ctx = self->backend->dispatch_context;
+  JprobeDispatchContext * ctx = self->backend->dispatch_context;
   dispatch_source_t source;
 
   thread_state = g_alloca (self->thread_state_count * sizeof (natural_t));
   thread_state_count = self->thread_state_count;
 
-  if (!frida_convert_thread_state_for_task (self->task, self->thread_state_flavor, self->thread_state_data, self->thread_state_count,
+  if (!jprobe_convert_thread_state_for_task (self->task, self->thread_state_flavor, self->thread_state_data, self->thread_state_count,
         thread_state, &thread_state_count, error))
   {
     return FALSE;
@@ -2657,8 +2657,8 @@ frida_inject_instance_start_thread (FridaInjectInstance * self, GError ** error)
   source = dispatch_source_create (DISPATCH_SOURCE_TYPE_MACH_SEND, self->thread, DISPATCH_MACH_SEND_DEAD, ctx->dispatch_queue);
   self->thread_monitor_source = source;
   dispatch_set_context (source, self);
-  dispatch_source_set_cancel_handler_f (source, frida_inject_instance_on_thread_monitor_cancel);
-  dispatch_source_set_event_handler_f (source, frida_inject_instance_on_mach_thread_dead);
+  dispatch_source_set_cancel_handler_f (source, jprobe_inject_instance_on_thread_monitor_cancel);
+  dispatch_source_set_event_handler_f (source, jprobe_inject_instance_on_mach_thread_dead);
   dispatch_resume (source);
 
   success = TRUE;
@@ -2668,8 +2668,8 @@ frida_inject_instance_start_thread (FridaInjectInstance * self, GError ** error)
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while starting thread (%s returned '%s')",
         failed_operation, mach_error_string (kr));
     goto beach;
@@ -2681,18 +2681,18 @@ beach:
 }
 
 static void
-frida_inject_instance_on_thread_monitor_cancel (void * context)
+jprobe_inject_instance_on_thread_monitor_cancel (void * context)
 {
-  FridaInjectInstance * self = context;
+  JprobeInjectInstance * self = context;
 
   dispatch_release (g_steal_pointer (&self->thread_monitor_source));
-  frida_inject_instance_close (self);
+  jprobe_inject_instance_close (self);
 }
 
 static void
-frida_inject_instance_on_mach_thread_dead (void * context)
+jprobe_inject_instance_on_mach_thread_dead (void * context)
 {
-  FridaInjectInstance * self = context;
+  JprobeInjectInstance * self = context;
   mach_port_t posix_thread_right_in_remote_task = self->agent_context->posix_thread;
   mach_port_t posix_thread_right_in_local_task = MACH_PORT_NULL;
 
@@ -2724,7 +2724,7 @@ frida_inject_instance_on_mach_thread_dead (void * context)
 
     if (denied_by_modern_xnu)
     {
-      posix_thread_right_in_local_task = frida_obtain_thread_port_for_thread_id (self->task, self->agent_context->posix_tid);
+      posix_thread_right_in_local_task = jprobe_obtain_thread_port_for_thread_id (self->task, self->agent_context->posix_tid);
 
       mach_port_deallocate (self->task, posix_thread_right_in_remote_task);
     }
@@ -2733,19 +2733,19 @@ frida_inject_instance_on_mach_thread_dead (void * context)
       posix_thread_right_in_local_task = MACH_PORT_NULL;
   }
 
-  _frida_darwin_helper_backend_on_mach_thread_dead (self->backend, self->id, GSIZE_TO_POINTER (posix_thread_right_in_local_task));
+  _jprobe_darwin_helper_backend_on_mach_thread_dead (self->backend, self->id, GSIZE_TO_POINTER (posix_thread_right_in_local_task));
 }
 
 void
-_frida_darwin_helper_backend_join_inject_instance_posix_thread (FridaDarwinHelperBackend * self, void * instance, void * posix_thread)
+_jprobe_darwin_helper_backend_join_inject_instance_posix_thread (JprobeDarwinHelperBackend * self, void * instance, void * posix_thread)
 {
-  frida_inject_instance_join_posix_thread (instance, GPOINTER_TO_SIZE (posix_thread));
+  jprobe_inject_instance_join_posix_thread (instance, GPOINTER_TO_SIZE (posix_thread));
 }
 
 static void
-frida_inject_instance_join_posix_thread (FridaInjectInstance * self, mach_port_t posix_thread)
+jprobe_inject_instance_join_posix_thread (JprobeInjectInstance * self, mach_port_t posix_thread)
 {
-  FridaDispatchContext * ctx = self->backend->dispatch_context;
+  JprobeDispatchContext * ctx = self->backend->dispatch_context;
   mach_port_t self_task;
   dispatch_source_t source;
 
@@ -2758,38 +2758,38 @@ frida_inject_instance_join_posix_thread (FridaInjectInstance * self, mach_port_t
   source = dispatch_source_create (DISPATCH_SOURCE_TYPE_MACH_SEND, self->thread, DISPATCH_MACH_SEND_DEAD, ctx->dispatch_queue);
   self->thread_monitor_source = source;
   dispatch_set_context (source, self);
-  dispatch_source_set_cancel_handler_f (source, frida_inject_instance_on_thread_monitor_cancel);
-  dispatch_source_set_event_handler_f (source, frida_inject_instance_on_posix_thread_dead);
+  dispatch_source_set_cancel_handler_f (source, jprobe_inject_instance_on_thread_monitor_cancel);
+  dispatch_source_set_event_handler_f (source, jprobe_inject_instance_on_posix_thread_dead);
   dispatch_resume (source);
 }
 
 static void
-frida_inject_instance_on_posix_thread_dead (void * context)
+jprobe_inject_instance_on_posix_thread_dead (void * context)
 {
-  FridaInjectInstance * self = context;
+  JprobeInjectInstance * self = context;
 
-  _frida_darwin_helper_backend_on_posix_thread_dead (self->backend, self->id);
+  _jprobe_darwin_helper_backend_on_posix_thread_dead (self->backend, self->id);
 }
 
 guint
-_frida_darwin_helper_backend_get_pid_of_inject_instance (FridaDarwinHelperBackend * self, void * instance)
+_jprobe_darwin_helper_backend_get_pid_of_inject_instance (JprobeDarwinHelperBackend * self, void * instance)
 {
-  return ((FridaInjectInstance *) instance)->pid;
+  return ((JprobeInjectInstance *) instance)->pid;
 }
 
 void
-_frida_darwin_helper_backend_close_inject_instance (FridaDarwinHelperBackend * self, void * instance)
+_jprobe_darwin_helper_backend_close_inject_instance (JprobeDarwinHelperBackend * self, void * instance)
 {
-  frida_inject_instance_close (instance);
+  jprobe_inject_instance_close (instance);
 }
 
-static FridaSpawnInstance *
-frida_spawn_instance_new (FridaDarwinHelperBackend * backend)
+static JprobeSpawnInstance *
+jprobe_spawn_instance_new (JprobeDarwinHelperBackend * backend)
 {
-  FridaSpawnInstance * instance;
+  JprobeSpawnInstance * instance;
   guint i;
 
-  instance = g_slice_new0 (FridaSpawnInstance);
+  instance = g_slice_new0 (JprobeSpawnInstance);
   instance->backend = g_object_ref (backend);
   instance->thread = MACH_PORT_NULL;
 
@@ -2799,30 +2799,30 @@ frida_spawn_instance_new (FridaDarwinHelperBackend * backend)
   instance->pending_request.thread.name = MACH_PORT_NULL;
   instance->pending_request.task.name = MACH_PORT_NULL;
 
-  instance->breakpoint_phase = FRIDA_BREAKPOINT_DETECT_FLAVOR;
+  instance->breakpoint_phase = JPROBE_BREAKPOINT_DETECT_FLAVOR;
   instance->single_stepping = -1;
-  for (i = 0; i != FRIDA_MAX_BREAKPOINTS; i++)
+  for (i = 0; i != JPROBE_MAX_BREAKPOINTS; i++)
   {
     instance->breakpoints[i].address = 0;
-    instance->breakpoints[i].repeat = FRIDA_BREAKPOINT_REPEAT_NEVER;
+    instance->breakpoints[i].repeat = JPROBE_BREAKPOINT_REPEAT_NEVER;
   }
 
-  for (i = 0; i != FRIDA_MAX_PAGE_POOL; i++)
+  for (i = 0; i != JPROBE_MAX_PAGE_POOL; i++)
   {
     instance->page_pool[i].page_start = 0;
     instance->page_pool[i].scratch_page = 0;
   }
 
-  _frida_darwin_helper_backend_on_instance_created (backend, instance);
+  _jprobe_darwin_helper_backend_on_instance_created (backend, instance);
 
   return instance;
 }
 
 static void
-frida_spawn_instance_close (FridaSpawnInstance * instance)
+jprobe_spawn_instance_close (JprobeSpawnInstance * instance)
 {
   task_t self_task;
-  FridaExceptionPortSet * previous_ports;
+  JprobeExceptionPortSet * previous_ports;
   mach_msg_type_number_t port_index;
 
   if (instance->server_recv_source != NULL)
@@ -2858,14 +2858,14 @@ frida_spawn_instance_close (FridaSpawnInstance * instance)
   if (instance->dyld != NULL)
     g_object_unref (instance->dyld);
 
-  _frida_darwin_helper_backend_on_instance_destroyed (instance->backend, instance);
+  _jprobe_darwin_helper_backend_on_instance_destroyed (instance->backend, instance);
   g_object_unref (instance->backend);
 
-  g_slice_free (FridaSpawnInstance, instance);
+  g_slice_free (JprobeSpawnInstance, instance);
 }
 
 static GumAddress
-frida_spawn_instance_get_ret_gadget_address (FridaSpawnInstance * self)
+jprobe_spawn_instance_get_ret_gadget_address (JprobeSpawnInstance * self)
 {
   if (self->cpu_type == GUM_CPU_ARM)
     return self->ret_gadget & ~GUM_ADDRESS (1);
@@ -2874,17 +2874,17 @@ frida_spawn_instance_get_ret_gadget_address (FridaSpawnInstance * self)
 }
 
 static void
-frida_spawn_instance_resume (FridaSpawnInstance * self)
+jprobe_spawn_instance_resume (JprobeSpawnInstance * self)
 {
-  if (self->breakpoint_phase != FRIDA_BREAKPOINT_DONE)
+  if (self->breakpoint_phase != JPROBE_BREAKPOINT_DONE)
   {
     guint task;
     GError * error = NULL;
 
-    task = frida_darwin_helper_backend_task_for_pid (self->pid, &error);
+    task = jprobe_darwin_helper_backend_task_for_pid (self->pid, &error);
     if (error == NULL)
     {
-      frida_darwin_helper_backend_resume_process (task, &error);
+      jprobe_darwin_helper_backend_resume_process (task, &error);
 
       mach_port_deallocate (mach_task_self (), task);
     }
@@ -2894,22 +2894,22 @@ frida_spawn_instance_resume (FridaSpawnInstance * self)
     return;
   }
 
-  frida_spawn_instance_send_breakpoint_response (self);
+  jprobe_spawn_instance_send_breakpoint_response (self);
 }
 
 static void
-frida_spawn_instance_on_server_cancel (void * context)
+jprobe_spawn_instance_on_server_cancel (void * context)
 {
-  FridaSpawnInstance * self = context;
+  JprobeSpawnInstance * self = context;
 
   dispatch_release (g_steal_pointer (&self->server_recv_source));
-  frida_spawn_instance_close (self);
+  jprobe_spawn_instance_close (self);
 }
 
 static void
-frida_spawn_instance_on_server_recv (void * context)
+jprobe_spawn_instance_on_server_recv (void * context)
 {
-  FridaSpawnInstance * self = context;
+  JprobeSpawnInstance * self = context;
   __Request__exception_raise_state_identity_t * request = &self->pending_request;
   kern_return_t kr;
   GumAddress pc;
@@ -2920,10 +2920,10 @@ frida_spawn_instance_on_server_recv (void * context)
   gboolean pc_may_need_fixup_due_to_ptrauth_failure;
 #endif
   guint i, current_bp_index;
-  FridaBreakpoint * breakpoint = NULL;
+  JprobeBreakpoint * breakpoint = NULL;
   gboolean carry_on, pc_changed;
 
-  frida_spawn_instance_receive_breakpoint_request (self);
+  jprobe_spawn_instance_receive_breakpoint_request (self);
 
 #if defined (HAVE_ARM) || defined (HAVE_ARM64)
   {
@@ -2934,19 +2934,19 @@ frida_spawn_instance_on_server_recv (void * context)
     if ((self->single_stepping >= 0 && !is_step_complete) ||
         (self->single_stepping == -1 && is_step_complete))
     {
-      frida_spawn_instance_send_breakpoint_response (self);
+      jprobe_spawn_instance_send_breakpoint_response (self);
       return;
     }
   }
 #endif
 
-  kr = frida_get_thread_state (self->thread, state_flavor, &state, &state_count);
+  kr = jprobe_get_thread_state (self->thread, state_flavor, &state, &state_count);
   if (kr != KERN_SUCCESS)
     return;
 
 #if __has_feature (ptrauth_calls)
   {
-    const GumAddress ret_gadget = frida_spawn_instance_get_ret_gadget_address (self);
+    const GumAddress ret_gadget = jprobe_spawn_instance_get_ret_gadget_address (self);
 
     pc_may_need_fixup_due_to_ptrauth_failure = gum_strip_code_address (GUM_ADDRESS (state.ts_64.__opaque_pc)) == ret_gadget;
     if (pc_may_need_fixup_due_to_ptrauth_failure)
@@ -2982,30 +2982,30 @@ frida_spawn_instance_on_server_recv (void * context)
 
   if (self->single_stepping >= 0)
   {
-    FridaBreakpoint * bp = &self->breakpoints[self->single_stepping];
+    JprobeBreakpoint * bp = &self->breakpoints[self->single_stepping];
 
-    frida_set_hardware_single_step (&self->breakpoint_debug_state, &state, FALSE, self->cpu_type);
+    jprobe_set_hardware_single_step (&self->breakpoint_debug_state, &state, FALSE, self->cpu_type);
 
-    if (bp->repeat != FRIDA_BREAKPOINT_REPEAT_ALWAYS)
-      frida_spawn_instance_unset_nth_breakpoint (self, self->single_stepping);
+    if (bp->repeat != JPROBE_BREAKPOINT_REPEAT_ALWAYS)
+      jprobe_spawn_instance_unset_nth_breakpoint (self, self->single_stepping);
     self->single_stepping = -1;
 
-    for (i = 0; i != FRIDA_MAX_BREAKPOINTS; i++)
+    for (i = 0; i != JPROBE_MAX_BREAKPOINTS; i++)
     {
-      FridaBreakpoint * bp = &self->breakpoints[i];
-      if (bp->repeat != FRIDA_BREAKPOINT_REPEAT_NEVER)
-        frida_spawn_instance_set_nth_breakpoint (self, i, bp->address, bp->repeat);
+      JprobeBreakpoint * bp = &self->breakpoints[i];
+      if (bp->repeat != JPROBE_BREAKPOINT_REPEAT_NEVER)
+        jprobe_spawn_instance_set_nth_breakpoint (self, i, bp->address, bp->repeat);
     }
 
-    frida_set_thread_state (self->thread, state_flavor, &state, state_count);
-    frida_set_debug_state (self->thread, &self->breakpoint_debug_state, self->cpu_type);
+    jprobe_set_thread_state (self->thread, state_flavor, &state, state_count);
+    jprobe_set_debug_state (self->thread, &self->breakpoint_debug_state, self->cpu_type);
 
-    frida_spawn_instance_send_breakpoint_response (self);
+    jprobe_spawn_instance_send_breakpoint_response (self);
 
     return;
   }
 
-  for (i = 0; i != FRIDA_MAX_BREAKPOINTS; i++)
+  for (i = 0; i != JPROBE_MAX_BREAKPOINTS; i++)
   {
     if ((self->breakpoints[i].address & ~1) == (pc & ~GUM_ADDRESS (1)))
     {
@@ -3018,7 +3018,7 @@ frida_spawn_instance_on_server_recv (void * context)
   if (breakpoint == NULL)
     goto unexpected_exception;
 
-  carry_on = frida_spawn_instance_handle_breakpoint (self, breakpoint, &state);
+  carry_on = jprobe_spawn_instance_handle_breakpoint (self, breakpoint, &state);
   if (!carry_on)
     return;
 
@@ -3036,22 +3036,22 @@ frida_spawn_instance_on_server_recv (void * context)
 
   if (!pc_changed)
   {
-    for (i = 0; i != FRIDA_MAX_BREAKPOINTS; i++)
-      frida_spawn_instance_disable_nth_breakpoint (self, i);
+    for (i = 0; i != JPROBE_MAX_BREAKPOINTS; i++)
+      jprobe_spawn_instance_disable_nth_breakpoint (self, i);
 
-    frida_set_hardware_single_step (&self->breakpoint_debug_state, &state, TRUE, self->cpu_type);
+    jprobe_set_hardware_single_step (&self->breakpoint_debug_state, &state, TRUE, self->cpu_type);
 
     self->single_stepping = current_bp_index;
   }
-  else if (breakpoint->repeat != FRIDA_BREAKPOINT_REPEAT_ALWAYS)
+  else if (breakpoint->repeat != JPROBE_BREAKPOINT_REPEAT_ALWAYS)
   {
-    frida_spawn_instance_unset_nth_breakpoint (self, current_bp_index);
+    jprobe_spawn_instance_unset_nth_breakpoint (self, current_bp_index);
   }
 
-  frida_set_thread_state (self->thread, state_flavor, &state, state_count);
-  frida_set_debug_state (self->thread, &self->breakpoint_debug_state, self->cpu_type);
+  jprobe_set_thread_state (self->thread, state_flavor, &state, state_count);
+  jprobe_set_debug_state (self->thread, &self->breakpoint_debug_state, self->cpu_type);
 
-  frida_spawn_instance_send_breakpoint_response (self);
+  jprobe_spawn_instance_send_breakpoint_response (self);
 
   return;
 
@@ -3125,9 +3125,9 @@ unexpected_exception:
 
     g_string_append (message, " while initializing suspended process");
 
-    error = g_error_new_literal (FRIDA_ERROR, FRIDA_ERROR_NOT_SUPPORTED, message->str);
+    error = g_error_new_literal (JPROBE_ERROR, JPROBE_ERROR_NOT_SUPPORTED, message->str);
 
-    _frida_darwin_helper_backend_on_spawn_instance_error (self->backend, self->pid, error);
+    _jprobe_darwin_helper_backend_on_spawn_instance_error (self->backend, self->pid, error);
 
     g_error_free (error);
     g_string_free (message, TRUE);
@@ -3158,7 +3158,7 @@ forward_to_system:
 }
 
 static gboolean
-frida_spawn_instance_handle_breakpoint (FridaSpawnInstance * self, FridaBreakpoint * breakpoint, GumDarwinUnifiedThreadState * state)
+jprobe_spawn_instance_handle_breakpoint (JprobeSpawnInstance * self, JprobeBreakpoint * breakpoint, GumDarwinUnifiedThreadState * state)
 {
   kern_return_t kr;
   GumAddress pc;
@@ -3167,23 +3167,23 @@ frida_spawn_instance_handle_breakpoint (FridaSpawnInstance * self, FridaBreakpoi
 
   pc = breakpoint->address;
 
-  if (self->breakpoint_phase == FRIDA_BREAKPOINT_DETECT_FLAVOR)
+  if (self->breakpoint_phase == JPROBE_BREAKPOINT_DETECT_FLAVOR)
   {
     if (pc == self->sim_notify_address)
     {
-      self->breakpoint_phase = FRIDA_BREAKPOINT_LIBSYSTEM_INITIALIZED;
+      self->breakpoint_phase = JPROBE_BREAKPOINT_LIBSYSTEM_INITIALIZED;
     }
-    else if (self->dyld_flavor == FRIDA_DYLD_V4_PLUS)
+    else if (self->dyld_flavor == JPROBE_DYLD_V4_PLUS)
     {
       if (pc == self->modern_entry_address)
       {
         self->breakpoint_phase = (pc == self->notify_objc_init)
-            ? FRIDA_BREAKPOINT_LIBSYSTEM_INITIALIZED
-            : FRIDA_BREAKPOINT_SET_LIBDYLD_INITIALIZE_CALLER_BREAKPOINT;
+            ? JPROBE_BREAKPOINT_LIBSYSTEM_INITIALIZED
+            : JPROBE_BREAKPOINT_SET_LIBDYLD_INITIALIZE_CALLER_BREAKPOINT;
       }
       else
       {
-        return frida_spawn_instance_handle_dyld_restart (self);
+        return jprobe_spawn_instance_handle_dyld_restart (self);
       }
     }
     else
@@ -3191,16 +3191,16 @@ frida_spawn_instance_handle_breakpoint (FridaSpawnInstance * self, FridaBreakpoi
       memcpy (&self->previous_thread_state, state, sizeof (GumDarwinUnifiedThreadState));
 
       if (pc == self->modern_entry_address)
-        self->breakpoint_phase = FRIDA_BREAKPOINT_CF_INITIALIZE;
+        self->breakpoint_phase = JPROBE_BREAKPOINT_CF_INITIALIZE;
       else
-        self->breakpoint_phase = FRIDA_BREAKPOINT_SET_HELPERS;
+        self->breakpoint_phase = JPROBE_BREAKPOINT_SET_HELPERS;
     }
   }
 
-  if (pc == frida_spawn_instance_get_ret_gadget_address (self))
+  if (pc == jprobe_spawn_instance_get_ret_gadget_address (self))
   {
 #ifdef HAVE_I386
-    if (self->ret_state == FRIDA_RET_FROM_HELPER)
+    if (self->ret_state == JPROBE_RET_FROM_HELPER)
     {
       if (self->cpu_type == GUM_CPU_AMD64)
         state->uts.ts64.__rax = self->fake_error_buf;
@@ -3216,29 +3216,29 @@ frida_spawn_instance_handle_breakpoint (FridaSpawnInstance * self, FridaBreakpoi
 
       __darwin_arm_thread_state64_set_pc_fptr (state->ts_64, GSIZE_TO_POINTER (new_pc));
 
-      if (self->ret_state == FRIDA_RET_FROM_HELPER)
+      if (self->ret_state == JPROBE_RET_FROM_HELPER)
         state->ts_64.__x[0] = self->fake_error_buf;
     }
     else
     {
       state->ts_32.__pc = state->ts_32.__lr;
-      if (self->ret_state == FRIDA_RET_FROM_HELPER)
+      if (self->ret_state == JPROBE_RET_FROM_HELPER)
         state->ts_32.__r[0] = self->fake_error_buf;
     }
 #endif
 
-    self->ret_state = FRIDA_RET_FROM_HELPER;
+    self->ret_state = JPROBE_RET_FROM_HELPER;
 
     return TRUE;
   }
 
-  if (frida_spawn_instance_handle_modinit (self, state, pc))
+  if (jprobe_spawn_instance_handle_modinit (self, state, pc))
     return TRUE;
 
 next_phase:
   switch (self->breakpoint_phase)
   {
-    case FRIDA_BREAKPOINT_SET_LIBDYLD_INITIALIZE_CALLER_BREAKPOINT:
+    case JPROBE_BREAKPOINT_SET_LIBDYLD_INITIALIZE_CALLER_BREAKPOINT:
     {
       GumAddress frame_pointer = 0;
       guint64 * ret_addr_data;
@@ -3272,33 +3272,33 @@ next_phase:
       }
       while (!falls_within_dyld);
 
-      frida_spawn_instance_set_nth_breakpoint (self, 1, libsystem_initializer_caller, FRIDA_BREAKPOINT_REPEAT_ALWAYS);
+      jprobe_spawn_instance_set_nth_breakpoint (self, 1, libsystem_initializer_caller, JPROBE_BREAKPOINT_REPEAT_ALWAYS);
 
-      self->breakpoint_phase = FRIDA_BREAKPOINT_LIBSYSTEM_INITIALIZED;
+      self->breakpoint_phase = JPROBE_BREAKPOINT_LIBSYSTEM_INITIALIZED;
 
       return TRUE;
     }
 
-    case FRIDA_BREAKPOINT_LIBSYSTEM_INITIALIZED:
+    case JPROBE_BREAKPOINT_LIBSYSTEM_INITIALIZED:
       memcpy (&self->previous_thread_state, state, sizeof (GumDarwinUnifiedThreadState));
-      self->breakpoint_phase = FRIDA_BREAKPOINT_CF_INITIALIZE;
+      self->breakpoint_phase = JPROBE_BREAKPOINT_CF_INITIALIZE;
       goto next_phase;
 
-    case FRIDA_BREAKPOINT_SET_HELPERS:
-      frida_spawn_instance_create_dyld_data (self);
+    case JPROBE_BREAKPOINT_SET_HELPERS:
+      jprobe_spawn_instance_create_dyld_data (self);
 
-      frida_spawn_instance_call_set_helpers (self, state, self->fake_helpers);
+      jprobe_spawn_instance_call_set_helpers (self, state, self->fake_helpers);
 
-      frida_spawn_instance_set_nth_breakpoint (self, 2, self->ret_gadget, FRIDA_BREAKPOINT_REPEAT_ALWAYS);
+      jprobe_spawn_instance_set_nth_breakpoint (self, 2, self->ret_gadget, JPROBE_BREAKPOINT_REPEAT_ALWAYS);
 
-      self->breakpoint_phase = FRIDA_BREAKPOINT_DLOPEN_LIBC;
+      self->breakpoint_phase = JPROBE_BREAKPOINT_DLOPEN_LIBC;
 
       return TRUE;
 
-    case FRIDA_BREAKPOINT_DLOPEN_LIBC:
-      if (frida_spawn_instance_is_libc_initialized (self))
+    case JPROBE_BREAKPOINT_DLOPEN_LIBC:
+      if (jprobe_spawn_instance_is_libc_initialized (self))
       {
-        frida_spawn_instance_unset_helpers (self);
+        jprobe_spawn_instance_unset_helpers (self);
       }
       else
       {
@@ -3314,28 +3314,28 @@ next_phase:
           if (avoid_breakpoint_conflict && breakpoint_index == 2)
             breakpoint_index++;
 
-          frida_spawn_instance_set_nth_breakpoint (self, breakpoint_index, GUM_ADDRESS (strcmp_check), FRIDA_BREAKPOINT_REPEAT_ALWAYS);
+          jprobe_spawn_instance_set_nth_breakpoint (self, breakpoint_index, GUM_ADDRESS (strcmp_check), JPROBE_BREAKPOINT_REPEAT_ALWAYS);
           breakpoint_index++;
         }
       }
 
       memcpy (state, &self->previous_thread_state, sizeof (GumDarwinUnifiedThreadState));
 
-      frida_spawn_instance_call_dlopen (self, state, self->lib_name, RTLD_GLOBAL | RTLD_LAZY);
+      jprobe_spawn_instance_call_dlopen (self, state, self->lib_name, RTLD_GLOBAL | RTLD_LAZY);
 
       if (self->dlerror_clear_address != 0)
       {
-        frida_spawn_instance_set_nth_breakpoint (self, 3, self->dlerror_clear_address, FRIDA_BREAKPOINT_REPEAT_ONCE);
-        self->breakpoint_phase = FRIDA_BREAKPOINT_SKIP_CLEAR;
+        jprobe_spawn_instance_set_nth_breakpoint (self, 3, self->dlerror_clear_address, JPROBE_BREAKPOINT_REPEAT_ONCE);
+        self->breakpoint_phase = JPROBE_BREAKPOINT_SKIP_CLEAR;
       }
       else
       {
-        self->breakpoint_phase = FRIDA_BREAKPOINT_DLOPEN_BOOTSTRAPPER;
+        self->breakpoint_phase = JPROBE_BREAKPOINT_DLOPEN_BOOTSTRAPPER;
       }
 
       return TRUE;
 
-    case FRIDA_BREAKPOINT_SKIP_CLEAR:
+    case JPROBE_BREAKPOINT_SKIP_CLEAR:
 #ifdef HAVE_I386
       if (self->cpu_type == GUM_CPU_AMD64)
         state->uts.ts64.__rip = self->ret_gadget;
@@ -3348,48 +3348,48 @@ next_phase:
         state->ts_32.__pc = state->ts_32.__lr;
 #endif
 
-      self->breakpoint_phase = FRIDA_BREAKPOINT_DLOPEN_BOOTSTRAPPER;
+      self->breakpoint_phase = JPROBE_BREAKPOINT_DLOPEN_BOOTSTRAPPER;
 
       return TRUE;
 
-    case FRIDA_BREAKPOINT_DLOPEN_BOOTSTRAPPER:
+    case JPROBE_BREAKPOINT_DLOPEN_BOOTSTRAPPER:
 #if defined (HAVE_IOS) || defined (HAVE_TVOS) || defined (HAVE_XROS)
       if (self->bootstrapper_name != 0)
       {
-        frida_spawn_instance_set_libc_initialized (self);
-        frida_spawn_instance_unset_nth_breakpoint (self, 1);
+        jprobe_spawn_instance_set_libc_initialized (self);
+        jprobe_spawn_instance_unset_nth_breakpoint (self, 1);
         memcpy (state, &self->previous_thread_state, sizeof (GumDarwinUnifiedThreadState));
 
-        frida_spawn_instance_call_dlopen (self, state, self->bootstrapper_name, RTLD_GLOBAL | RTLD_LAZY);
+        jprobe_spawn_instance_call_dlopen (self, state, self->bootstrapper_name, RTLD_GLOBAL | RTLD_LAZY);
 
-        self->breakpoint_phase = FRIDA_BREAKPOINT_CLEANUP;
+        self->breakpoint_phase = JPROBE_BREAKPOINT_CLEANUP;
 
         return TRUE;
       }
 #endif
 
-    case FRIDA_BREAKPOINT_CF_INITIALIZE:
-      gum_darwin_enumerate_modules (self->task, frida_find_cf_initialize, self);
+    case JPROBE_BREAKPOINT_CF_INITIALIZE:
+      gum_darwin_enumerate_modules (self->task, jprobe_find_cf_initialize, self);
 
       if (self->cf_initialize_address != 0)
       {
         memcpy (state, &self->previous_thread_state, sizeof (GumDarwinUnifiedThreadState));
 
-        if (self->dyld_flavor == FRIDA_DYLD_V3_MINUS && pc != self->modern_entry_address)
-          frida_spawn_instance_unset_nth_breakpoint (self, 1);
+        if (self->dyld_flavor == JPROBE_DYLD_V3_MINUS && pc != self->modern_entry_address)
+          jprobe_spawn_instance_unset_nth_breakpoint (self, 1);
 
-        frida_spawn_instance_call_cf_initialize (self, state);
+        jprobe_spawn_instance_call_cf_initialize (self, state);
 
-        self->breakpoint_phase = FRIDA_BREAKPOINT_CLEANUP;
+        self->breakpoint_phase = JPROBE_BREAKPOINT_CLEANUP;
 
         return TRUE;
       }
 
-    case FRIDA_BREAKPOINT_CLEANUP:
+    case JPROBE_BREAKPOINT_CLEANUP:
     {
       task_t self_task;
       gsize page_size;
-      FridaExceptionPortSet * previous_ports;
+      JprobeExceptionPortSet * previous_ports;
       mach_msg_type_number_t port_index;
       guint i;
 
@@ -3411,29 +3411,29 @@ next_phase:
       }
       previous_ports->count = 0;
 
-      kr = frida_set_thread_state (self->thread, state_flavor, &self->previous_thread_state, state_count);
+      kr = jprobe_set_thread_state (self->thread, state_flavor, &self->previous_thread_state, state_count);
       if (kr != KERN_SUCCESS)
         return FALSE;
 
-      frida_spawn_instance_destroy_dyld_data (self);
+      jprobe_spawn_instance_destroy_dyld_data (self);
 
-      for (i = 0; i != FRIDA_MAX_BREAKPOINTS; i++)
-        frida_spawn_instance_unset_nth_breakpoint (self, i);
+      for (i = 0; i != JPROBE_MAX_BREAKPOINTS; i++)
+        jprobe_spawn_instance_unset_nth_breakpoint (self, i);
 
-      for (i = 0; i != FRIDA_MAX_PAGE_POOL; i++)
+      for (i = 0; i != JPROBE_MAX_PAGE_POOL; i++)
       {
         if (self->page_pool[i].scratch_page != 0)
           mach_vm_deallocate (self->task, self->page_pool[i].scratch_page, page_size);
       }
 
-      frida_set_debug_state (self->thread, &self->previous_debug_state, self->cpu_type);
+      jprobe_set_debug_state (self->thread, &self->previous_debug_state, self->cpu_type);
 
       if (self->info_address != 0)
-        frida_spawn_instance_set_libc_initialized (self);
+        jprobe_spawn_instance_set_libc_initialized (self);
 
-      self->breakpoint_phase = FRIDA_BREAKPOINT_DONE;
+      self->breakpoint_phase = JPROBE_BREAKPOINT_DONE;
 
-      _frida_darwin_helper_backend_on_spawn_instance_ready (self->backend, self->pid);
+      _jprobe_darwin_helper_backend_on_spawn_instance_ready (self->backend, self->pid);
 
       return FALSE;
     }
@@ -3444,7 +3444,7 @@ next_phase:
 }
 
 static gboolean
-frida_spawn_instance_handle_dyld_restart (FridaSpawnInstance * self)
+jprobe_spawn_instance_handle_dyld_restart (JprobeSpawnInstance * self)
 {
   gboolean handled = FALSE;
   GumAddress * info_ptr;
@@ -3474,7 +3474,7 @@ frida_spawn_instance_handle_dyld_restart (FridaSpawnInstance * self)
   g_object_unref (self->dyld);
   self->dyld = g_steal_pointer (&dyld);
 
-  frida_spawn_instance_set_nth_breakpoint (self, 0, self->modern_entry_address, FRIDA_BREAKPOINT_REPEAT_ALWAYS);
+  jprobe_spawn_instance_set_nth_breakpoint (self, 0, self->modern_entry_address, JPROBE_BREAKPOINT_REPEAT_ALWAYS);
 
   handled = TRUE;
 
@@ -3487,7 +3487,7 @@ beach:
 }
 
 static gboolean
-frida_spawn_instance_handle_modinit (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state, GumAddress pc)
+jprobe_spawn_instance_handle_modinit (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state, GumAddress pc)
 {
   if (self->do_modinit_strcmp_checks == NULL)
     return FALSE;
@@ -3513,7 +3513,7 @@ frida_spawn_instance_handle_modinit (FridaSpawnInstance * self, GumDarwinUnified
 }
 
 static void
-frida_spawn_instance_receive_breakpoint_request (FridaSpawnInstance * self)
+jprobe_spawn_instance_receive_breakpoint_request (JprobeSpawnInstance * self)
 {
   __Request__exception_raise_state_identity_t * request = &self->pending_request;
   mach_msg_header_t * header = &request->Head;
@@ -3527,7 +3527,7 @@ frida_spawn_instance_receive_breakpoint_request (FridaSpawnInstance * self)
 }
 
 static void
-frida_spawn_instance_send_breakpoint_response (FridaSpawnInstance * self)
+jprobe_spawn_instance_send_breakpoint_response (JprobeSpawnInstance * self)
 {
   __Request__exception_raise_state_identity_t * request = &self->pending_request;
   __Reply__exception_raise_t response;
@@ -3550,7 +3550,7 @@ frida_spawn_instance_send_breakpoint_response (FridaSpawnInstance * self)
 }
 
 static gboolean
-frida_spawn_instance_is_libc_initialized (FridaSpawnInstance * self)
+jprobe_spawn_instance_is_libc_initialized (JprobeSpawnInstance * self)
 {
   gboolean initialized;
   GumAddress initialized_address;
@@ -3594,7 +3594,7 @@ frida_spawn_instance_is_libc_initialized (FridaSpawnInstance * self)
 }
 
 static void
-frida_spawn_instance_set_libc_initialized (FridaSpawnInstance * self)
+jprobe_spawn_instance_set_libc_initialized (JprobeSpawnInstance * self)
 {
   GumAddress initialized_address;
   gboolean write_succeeded;
@@ -3635,11 +3635,11 @@ frida_spawn_instance_set_libc_initialized (FridaSpawnInstance * self)
 }
 
 static kern_return_t
-frida_spawn_instance_create_dyld_data (FridaSpawnInstance * self)
+jprobe_spawn_instance_create_dyld_data (JprobeSpawnInstance * self)
 {
   GumPtrauthSupport ptrauth_support;
   GumAddress ret_gadget;
-  FridaSpawnInstanceDyldData data = { "/usr/lib/libSystem.B.dylib", { 0, }, "", { 0, } };
+  JprobeSpawnInstanceDyldData data = { "/usr/lib/libSystem.B.dylib", { 0, }, "", { 0, } };
   kern_return_t kr;
   gboolean write_succeeded;
 
@@ -3647,7 +3647,7 @@ frida_spawn_instance_create_dyld_data (FridaSpawnInstance * self)
     return KERN_FAILURE;
 
 #if defined (HAVE_IOS) || defined (HAVE_TVOS) || defined (HAVE_XROS)
-  gum_darwin_enumerate_modules (self->task, frida_pick_ios_tvos_bootstrapper, &data);
+  gum_darwin_enumerate_modules (self->task, jprobe_pick_ios_tvos_bootstrapper, &data);
 #endif
 
   ret_gadget = self->ret_gadget;
@@ -3702,24 +3702,24 @@ frida_spawn_instance_create_dyld_data (FridaSpawnInstance * self)
   if (!write_succeeded)
     return KERN_FAILURE;
 
-  self->fake_helpers = self->dyld_data + offsetof (FridaSpawnInstanceDyldData, helpers);
-  self->lib_name = self->dyld_data + offsetof (FridaSpawnInstanceDyldData, libc);
+  self->fake_helpers = self->dyld_data + offsetof (JprobeSpawnInstanceDyldData, helpers);
+  self->lib_name = self->dyld_data + offsetof (JprobeSpawnInstanceDyldData, libc);
   if (data.bootstrapper[0] == '\0')
     self->bootstrapper_name = 0;
   else
-    self->bootstrapper_name = self->dyld_data + offsetof (FridaSpawnInstanceDyldData, bootstrapper);
-  self->fake_error_buf = self->dyld_data + offsetof (FridaSpawnInstanceDyldData, error_buf);
+    self->bootstrapper_name = self->dyld_data + offsetof (JprobeSpawnInstanceDyldData, bootstrapper);
+  self->fake_error_buf = self->dyld_data + offsetof (JprobeSpawnInstanceDyldData, error_buf);
 
   return KERN_SUCCESS;
 }
 
 static void
-frida_spawn_instance_destroy_dyld_data (FridaSpawnInstance * self)
+jprobe_spawn_instance_destroy_dyld_data (JprobeSpawnInstance * self)
 {
   if (self->dyld_data == 0)
     return;
 
-  vm_deallocate (self->task, (vm_address_t) self->dyld_data, sizeof (FridaSpawnInstanceDyldData));
+  vm_deallocate (self->task, (vm_address_t) self->dyld_data, sizeof (JprobeSpawnInstanceDyldData));
 
   self->dyld_data = 0;
 }
@@ -3727,9 +3727,9 @@ frida_spawn_instance_destroy_dyld_data (FridaSpawnInstance * self)
 #if defined (HAVE_IOS) || defined (HAVE_TVOS) || defined (HAVE_XROS)
 
 static gboolean
-frida_pick_ios_tvos_bootstrapper (GumModule * module, gpointer user_data)
+jprobe_pick_ios_tvos_bootstrapper (GumModule * module, gpointer user_data)
 {
-  FridaSpawnInstanceDyldData * data = user_data;
+  JprobeSpawnInstanceDyldData * data = user_data;
   const gchar * path;
   const gchar * candidates[] = {
     "/usr/lib/substitute-inserter.dylib",
@@ -3756,7 +3756,7 @@ frida_pick_ios_tvos_bootstrapper (GumModule * module, gpointer user_data)
 #endif
 
 static void
-frida_spawn_instance_unset_helpers (FridaSpawnInstance * self)
+jprobe_spawn_instance_unset_helpers (JprobeSpawnInstance * self)
 {
   gboolean write_succeeded;
 
@@ -3790,7 +3790,7 @@ frida_spawn_instance_unset_helpers (FridaSpawnInstance * self)
 }
 
 static void
-frida_spawn_instance_call_set_helpers (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t helpers)
+jprobe_spawn_instance_call_set_helpers (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t helpers)
 {
   GumAddress new_pc, current_pc;
 
@@ -3845,7 +3845,7 @@ frida_spawn_instance_call_set_helpers (FridaSpawnInstance * self, GumDarwinUnifi
 }
 
 static void
-frida_spawn_instance_call_dlopen (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t lib_name, int mode)
+jprobe_spawn_instance_call_dlopen (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state, mach_vm_address_t lib_name, int mode)
 {
   GumAddress new_pc, current_pc;
 
@@ -3908,9 +3908,9 @@ frida_spawn_instance_call_dlopen (FridaSpawnInstance * self, GumDarwinUnifiedThr
 }
 
 static gboolean
-frida_find_cf_initialize (GumModule * module, gpointer user_data)
+jprobe_find_cf_initialize (GumModule * module, gpointer user_data)
 {
-  FridaSpawnInstance * self = user_data;
+  JprobeSpawnInstance * self = user_data;
   GumMachoModule * core_foundation;
 
   if (strcmp (gum_module_get_path (module), CORE_FOUNDATION) != 0)
@@ -3930,7 +3930,7 @@ frida_find_cf_initialize (GumModule * module, gpointer user_data)
 }
 
 static void
-frida_spawn_instance_call_cf_initialize (FridaSpawnInstance * self, GumDarwinUnifiedThreadState * state)
+jprobe_spawn_instance_call_cf_initialize (JprobeSpawnInstance * self, GumDarwinUnifiedThreadState * state)
 {
   GumAddress new_pc, current_pc;
 
@@ -3981,80 +3981,80 @@ frida_spawn_instance_call_cf_initialize (FridaSpawnInstance * self, GumDarwinUni
 }
 
 static void
-frida_spawn_instance_set_nth_breakpoint (FridaSpawnInstance * self, guint n, GumAddress break_at, FridaBreakpointRepeat repeat)
+jprobe_spawn_instance_set_nth_breakpoint (JprobeSpawnInstance * self, guint n, GumAddress break_at, JprobeBreakpointRepeat repeat)
 {
-  g_assert (n < FRIDA_MAX_BREAKPOINTS);
+  g_assert (n < JPROBE_MAX_BREAKPOINTS);
 
   if (self->breakpoints[n].address != 0 && self->breakpoints[n].address != break_at)
-    frida_spawn_instance_disable_nth_breakpoint (self, n);
+    jprobe_spawn_instance_disable_nth_breakpoint (self, n);
 
   self->breakpoints[n].address = break_at;
   self->breakpoints[n].repeat = repeat;
 
-  frida_spawn_instance_enable_nth_breakpoint (self, n);
+  jprobe_spawn_instance_enable_nth_breakpoint (self, n);
 }
 
 static void
-frida_spawn_instance_enable_nth_breakpoint (FridaSpawnInstance * self, guint n)
+jprobe_spawn_instance_enable_nth_breakpoint (JprobeSpawnInstance * self, guint n)
 {
-  FridaBreakpoint * breakpoint;
+  JprobeBreakpoint * breakpoint;
 
-  g_assert (n < FRIDA_MAX_BREAKPOINTS);
+  g_assert (n < JPROBE_MAX_BREAKPOINTS);
 
   breakpoint = &self->breakpoints[n];
 
   if (breakpoint->address == 0)
     return;
 
-  if (frida_is_hardware_breakpoint_support_working ())
-    frida_set_nth_hardware_breakpoint (&self->breakpoint_debug_state, n, breakpoint->address, self->cpu_type);
+  if (jprobe_is_hardware_breakpoint_support_working ())
+    jprobe_set_nth_hardware_breakpoint (&self->breakpoint_debug_state, n, breakpoint->address, self->cpu_type);
   else
-    breakpoint->original = frida_spawn_instance_put_software_breakpoint (self, breakpoint->address, n);
+    breakpoint->original = jprobe_spawn_instance_put_software_breakpoint (self, breakpoint->address, n);
 }
 
 static void
-frida_spawn_instance_unset_nth_breakpoint (FridaSpawnInstance * self, guint n)
+jprobe_spawn_instance_unset_nth_breakpoint (JprobeSpawnInstance * self, guint n)
 {
-  g_assert (n < FRIDA_MAX_BREAKPOINTS);
+  g_assert (n < JPROBE_MAX_BREAKPOINTS);
 
-  frida_spawn_instance_disable_nth_breakpoint (self, n);
+  jprobe_spawn_instance_disable_nth_breakpoint (self, n);
 
   self->breakpoints[n].address = 0;
-  self->breakpoints[n].repeat = FRIDA_BREAKPOINT_REPEAT_NEVER;
+  self->breakpoints[n].repeat = JPROBE_BREAKPOINT_REPEAT_NEVER;
 }
 
 static void
-frida_spawn_instance_disable_nth_breakpoint (FridaSpawnInstance * self, guint n)
+jprobe_spawn_instance_disable_nth_breakpoint (JprobeSpawnInstance * self, guint n)
 {
-  g_assert (n < FRIDA_MAX_BREAKPOINTS);
+  g_assert (n < JPROBE_MAX_BREAKPOINTS);
 
-  if (frida_is_hardware_breakpoint_support_working ())
+  if (jprobe_is_hardware_breakpoint_support_working ())
   {
-    frida_set_nth_hardware_breakpoint (&self->breakpoint_debug_state, n, 0, self->cpu_type);
+    jprobe_set_nth_hardware_breakpoint (&self->breakpoint_debug_state, n, 0, self->cpu_type);
   }
   else
   {
-    FridaBreakpoint * breakpoint = &self->breakpoints[n];
+    JprobeBreakpoint * breakpoint = &self->breakpoints[n];
 
     if (breakpoint->address != 0)
-      frida_spawn_instance_overwrite_arm64_instruction (self, breakpoint->address, breakpoint->original);
+      jprobe_spawn_instance_overwrite_arm64_instruction (self, breakpoint->address, breakpoint->original);
   }
 }
 
 static guint32
-frida_spawn_instance_put_software_breakpoint (FridaSpawnInstance * self, GumAddress where, guint index)
+jprobe_spawn_instance_put_software_breakpoint (JprobeSpawnInstance * self, GumAddress where, guint index)
 {
   guint32 instr_data;
 
-  g_assert (index < FRIDA_MAX_BREAKPOINTS);
+  g_assert (index < JPROBE_MAX_BREAKPOINTS);
 
   instr_data = 0xd4200000 | ((index & 0xffff) << 5);
 
-  return frida_spawn_instance_overwrite_arm64_instruction (self, where, instr_data);
+  return jprobe_spawn_instance_overwrite_arm64_instruction (self, where, instr_data);
 }
 
 static guint32
-frida_spawn_instance_overwrite_arm64_instruction (FridaSpawnInstance * self, GumAddress address, guint32 new_instruction)
+jprobe_spawn_instance_overwrite_arm64_instruction (JprobeSpawnInstance * self, GumAddress address, guint32 new_instruction)
 {
   guint32 original_instruction;
   gsize page_size;
@@ -4075,7 +4075,7 @@ frida_spawn_instance_overwrite_arm64_instruction (FridaSpawnInstance * self, Gum
 
   scratch_page = 0;
 
-  for (i = 0; i != FRIDA_MAX_PAGE_POOL; i++)
+  for (i = 0; i != JPROBE_MAX_PAGE_POOL; i++)
   {
     if (self->page_pool[i].page_start == page_start)
     {
@@ -4094,7 +4094,7 @@ frida_spawn_instance_overwrite_arm64_instruction (FridaSpawnInstance * self, Gum
     if (kr != KERN_SUCCESS)
       return 0;
 
-    for (i = 0; i != FRIDA_MAX_PAGE_POOL; i++)
+    for (i = 0; i != JPROBE_MAX_PAGE_POOL; i++)
     {
       if (self->page_pool[i].page_start == 0)
       {
@@ -4134,12 +4134,12 @@ frida_spawn_instance_overwrite_arm64_instruction (FridaSpawnInstance * self, Gum
   return original_instruction;
 }
 
-static FridaInjectInstance *
-frida_inject_instance_new (FridaDarwinHelperBackend * backend, guint id, guint pid)
+static JprobeInjectInstance *
+jprobe_inject_instance_new (JprobeDarwinHelperBackend * backend, guint id, guint pid)
 {
-  FridaInjectInstance * instance;
+  JprobeInjectInstance * instance;
 
-  instance = g_slice_new (FridaInjectInstance);
+  instance = g_slice_new (JprobeInjectInstance);
   instance->id = id;
 
   instance->pid = pid;
@@ -4157,20 +4157,20 @@ frida_inject_instance_new (FridaDarwinHelperBackend * backend, guint id, guint p
 
   instance->backend = g_object_ref (backend);
 
-  _frida_darwin_helper_backend_on_instance_created (backend, instance);
+  _jprobe_darwin_helper_backend_on_instance_created (backend, instance);
 
   return instance;
 }
 
-static FridaInjectInstance *
-frida_inject_instance_clone (const FridaInjectInstance * instance, guint id)
+static JprobeInjectInstance *
+jprobe_inject_instance_clone (const JprobeInjectInstance * instance, guint id)
 {
-  FridaInjectInstance * clone;
+  JprobeInjectInstance * clone;
   mach_port_t self_task;
   mach_vm_address_t agent_context_address = 0;
   kern_return_t kr;
 
-  clone = g_slice_dup (FridaInjectInstance, instance);
+  clone = g_slice_dup (JprobeInjectInstance, instance);
   clone->id = id;
 
   clone->task = MACH_PORT_NULL;
@@ -4180,7 +4180,7 @@ frida_inject_instance_clone (const FridaInjectInstance * instance, guint id)
   kr = mach_vm_allocate (self_task, &agent_context_address, instance->agent_context_size, VM_FLAGS_ANYWHERE);
   g_assert (kr == KERN_SUCCESS);
 
-  clone->agent_context = (FridaAgentContext *) agent_context_address;
+  clone->agent_context = (JprobeAgentContext *) agent_context_address;
   memcpy (clone->agent_context, instance->agent_context, instance->agent_context_size);
 
   clone->thread = MACH_PORT_NULL;
@@ -4188,15 +4188,15 @@ frida_inject_instance_clone (const FridaInjectInstance * instance, guint id)
 
   g_object_ref (clone->backend);
 
-  _frida_darwin_helper_backend_on_instance_created (clone->backend, clone);
+  _jprobe_darwin_helper_backend_on_instance_created (clone->backend, clone);
 
   return clone;
 }
 
 static void
-frida_inject_instance_close (FridaInjectInstance * instance)
+jprobe_inject_instance_close (JprobeInjectInstance * instance)
 {
-  FridaAgentContext * agent_context = instance->agent_context;
+  JprobeAgentContext * agent_context = instance->agent_context;
   task_t self_task;
   gboolean can_deallocate_payload;
 
@@ -4211,21 +4211,21 @@ frida_inject_instance_close (FridaInjectInstance * instance)
   if (instance->thread != MACH_PORT_NULL)
     mach_port_deallocate (self_task, instance->thread);
 
-  can_deallocate_payload = !(agent_context != NULL && agent_context->unload_policy != FRIDA_UNLOAD_POLICY_IMMEDIATE && instance->is_mapped);
+  can_deallocate_payload = !(agent_context != NULL && agent_context->unload_policy != JPROBE_UNLOAD_POLICY_IMMEDIATE && instance->is_mapped);
   if (instance->payload_address != 0 &&
       can_deallocate_payload &&
-      frida_inject_instance_task_did_not_exec (instance))
+      jprobe_inject_instance_task_did_not_exec (instance))
   {
     mach_vm_deallocate (instance->task, instance->payload_address, instance->payload_size);
 
     if (instance->is_loaded)
     {
-      _frida_darwin_helper_backend_on_inject_instance_unloaded (instance->backend, instance->id, instance->pid);
+      _jprobe_darwin_helper_backend_on_inject_instance_unloaded (instance->backend, instance->id, instance->pid);
     }
   }
   else
   {
-    _frida_darwin_helper_backend_on_inject_instance_detached (instance->backend, instance->id, instance->pid);
+    _jprobe_darwin_helper_backend_on_inject_instance_detached (instance->backend, instance->id, instance->pid);
   }
 
   if (agent_context != NULL)
@@ -4234,14 +4234,14 @@ frida_inject_instance_close (FridaInjectInstance * instance)
   if (instance->task != MACH_PORT_NULL)
     mach_port_deallocate (self_task, instance->task);
 
-  _frida_darwin_helper_backend_on_instance_destroyed (instance->backend, instance);
+  _jprobe_darwin_helper_backend_on_instance_destroyed (instance->backend, instance);
   g_object_unref (instance->backend);
 
-  g_slice_free (FridaInjectInstance, instance);
+  g_slice_free (JprobeInjectInstance, instance);
 }
 
 static gboolean
-frida_inject_instance_task_did_not_exec (FridaInjectInstance * instance)
+jprobe_inject_instance_task_did_not_exec (JprobeInjectInstance * instance)
 {
   gchar * local_cookie, * remote_cookie;
   gboolean shared_memory_still_mapped;
@@ -4275,13 +4275,13 @@ frida_inject_instance_task_did_not_exec (FridaInjectInstance * instance)
 }
 
 static gboolean
-frida_agent_context_init (FridaAgentContext * self, const FridaAgentDetails * details, const FridaInjectPayloadLayout * layout,
+jprobe_agent_context_init (JprobeAgentContext * self, const JprobeAgentDetails * details, const JprobeInjectPayloadLayout * layout,
     mach_vm_address_t payload_base, mach_vm_address_t mapped_base, mach_vm_size_t mapped_size, GumDarwinModuleResolver * resolver,
     GumMapper * mapper, GError ** error)
 {
-  bzero (self, sizeof (FridaAgentContext));
+  bzero (self, sizeof (JprobeAgentContext));
 
-  self->unload_policy = FRIDA_UNLOAD_POLICY_IMMEDIATE;
+  self->unload_policy = JPROBE_UNLOAD_POLICY_IMMEDIATE;
   self->task = MACH_PORT_NULL;
   self->mach_thread = MACH_PORT_NULL;
   self->posix_thread = MACH_PORT_NULL;
@@ -4289,7 +4289,7 @@ frida_agent_context_init (FridaAgentContext * self, const FridaAgentDetails * de
   self->constructed = FALSE;
   self->module_handle = NULL;
 
-  if (!frida_agent_context_init_functions (self, resolver, mapper, error))
+  if (!jprobe_agent_context_init_functions (self, resolver, mapper, error))
     return FALSE;
 
   self->mach_port_allocate_right = MACH_PORT_RIGHT_RECEIVE;
@@ -4300,26 +4300,26 @@ frida_agent_context_init (FridaAgentContext * self, const FridaAgentDetails * de
   self->pthread_create_arg = payload_base + layout->data_offset;
 
   self->message_that_never_arrives = payload_base + layout->data_offset +
-      G_STRUCT_OFFSET (FridaAgentContext, message_that_never_arrives_storage);
+      G_STRUCT_OFFSET (JprobeAgentContext, message_that_never_arrives_storage);
   self->message_that_never_arrives_storage.header.msgh_size = sizeof (mach_msg_empty_rcv_t);
 
   self->dylib_path = payload_base + layout->data_offset +
-      G_STRUCT_OFFSET (FridaAgentContext, dylib_path_storage);
+      G_STRUCT_OFFSET (JprobeAgentContext, dylib_path_storage);
   if (details->dylib_path != NULL)
     strcpy (self->dylib_path_storage, details->dylib_path);
   self->dlopen_mode = RTLD_LAZY;
 
   self->entrypoint_name = payload_base + layout->data_offset +
-      G_STRUCT_OFFSET (FridaAgentContext, entrypoint_name_storage);
+      G_STRUCT_OFFSET (JprobeAgentContext, entrypoint_name_storage);
   strcpy (self->entrypoint_name_storage, details->entrypoint_name);
 
   self->entrypoint_data = payload_base + layout->data_offset +
-      G_STRUCT_OFFSET (FridaAgentContext, entrypoint_data_storage);
+      G_STRUCT_OFFSET (JprobeAgentContext, entrypoint_data_storage);
   g_assert (strlen (details->entrypoint_data) < sizeof (self->entrypoint_data_storage));
   strcpy (self->entrypoint_data_storage, details->entrypoint_data);
 
   self->mapped_range = (mapper != NULL)
-      ? payload_base + layout->data_offset + G_STRUCT_OFFSET (FridaAgentContext, mapped_range_storage)
+      ? payload_base + layout->data_offset + G_STRUCT_OFFSET (JprobeAgentContext, mapped_range_storage)
       : 0;
   self->mapped_range_storage.base_address = mapped_base;
   self->mapped_range_storage.size = mapped_size;
@@ -4327,19 +4327,19 @@ frida_agent_context_init (FridaAgentContext * self, const FridaAgentDetails * de
   return TRUE;
 }
 
-#define FRIDA_AGENT_CONTEXT_RESOLVE(field) \
+#define JPROBE_AGENT_CONTEXT_RESOLVE(field) \
   G_STMT_START \
   { \
-    FRIDA_AGENT_CONTEXT_TRY_RESOLVE (field); \
+    JPROBE_AGENT_CONTEXT_TRY_RESOLVE (field); \
     if (self->field##_impl == 0) \
       goto missing_symbol; \
   } \
   G_STMT_END
-#define FRIDA_AGENT_CONTEXT_TRY_RESOLVE(field) \
+#define JPROBE_AGENT_CONTEXT_TRY_RESOLVE(field) \
   self->field##_impl = gum_strip_code_address (gum_darwin_module_resolver_find_export_address (resolver, module, G_STRINGIFY (field)))
 
 static gboolean
-frida_agent_context_init_functions (FridaAgentContext * self, GumDarwinModuleResolver * resolver, GumMapper * mapper, GError ** error)
+jprobe_agent_context_init_functions (JprobeAgentContext * self, GumDarwinModuleResolver * resolver, GumMapper * mapper, GError ** error)
 {
   gboolean success = FALSE;
   GumMachoModule * module;
@@ -4347,26 +4347,26 @@ frida_agent_context_init_functions (FridaAgentContext * self, GumDarwinModuleRes
   module = gum_darwin_module_resolver_find_macho_module_by_name (resolver, "/usr/lib/system/libsystem_kernel.dylib");
   if (module == NULL)
     goto no_libc;
-  FRIDA_AGENT_CONTEXT_RESOLVE (mach_task_self);
-  FRIDA_AGENT_CONTEXT_RESOLVE (mach_thread_self);
-  FRIDA_AGENT_CONTEXT_RESOLVE (mach_port_allocate);
-  FRIDA_AGENT_CONTEXT_RESOLVE (mach_msg_receive);
-  FRIDA_AGENT_CONTEXT_RESOLVE (mach_port_destroy);
-  FRIDA_AGENT_CONTEXT_RESOLVE (thread_terminate);
+  JPROBE_AGENT_CONTEXT_RESOLVE (mach_task_self);
+  JPROBE_AGENT_CONTEXT_RESOLVE (mach_thread_self);
+  JPROBE_AGENT_CONTEXT_RESOLVE (mach_port_allocate);
+  JPROBE_AGENT_CONTEXT_RESOLVE (mach_msg_receive);
+  JPROBE_AGENT_CONTEXT_RESOLVE (mach_port_destroy);
+  JPROBE_AGENT_CONTEXT_RESOLVE (thread_terminate);
   g_object_unref (module);
   module = NULL;
 
   module = gum_darwin_module_resolver_find_macho_module_by_name (resolver, "/usr/lib/system/libsystem_pthread.dylib");
   if (module == NULL)
     goto no_libc;
-  FRIDA_AGENT_CONTEXT_TRY_RESOLVE (pthread_create_from_mach_thread);
+  JPROBE_AGENT_CONTEXT_TRY_RESOLVE (pthread_create_from_mach_thread);
   if (self->pthread_create_from_mach_thread_impl != 0)
     self->pthread_create_impl = self->pthread_create_from_mach_thread_impl;
   else
-    FRIDA_AGENT_CONTEXT_RESOLVE (pthread_create);
-  FRIDA_AGENT_CONTEXT_TRY_RESOLVE (pthread_threadid_np);
-  FRIDA_AGENT_CONTEXT_RESOLVE (pthread_detach);
-  FRIDA_AGENT_CONTEXT_RESOLVE (pthread_self);
+    JPROBE_AGENT_CONTEXT_RESOLVE (pthread_create);
+  JPROBE_AGENT_CONTEXT_TRY_RESOLVE (pthread_threadid_np);
+  JPROBE_AGENT_CONTEXT_RESOLVE (pthread_detach);
+  JPROBE_AGENT_CONTEXT_RESOLVE (pthread_self);
   g_object_unref (module);
   module = NULL;
 
@@ -4375,9 +4375,9 @@ frida_agent_context_init_functions (FridaAgentContext * self, GumDarwinModuleRes
     module = gum_darwin_module_resolver_find_macho_module_by_name (resolver, "/usr/lib/system/libdyld.dylib");
     if (module == NULL)
       goto no_libc;
-    FRIDA_AGENT_CONTEXT_RESOLVE (dlopen);
-    FRIDA_AGENT_CONTEXT_RESOLVE (dlsym);
-    FRIDA_AGENT_CONTEXT_RESOLVE (dlclose);
+    JPROBE_AGENT_CONTEXT_RESOLVE (dlopen);
+    JPROBE_AGENT_CONTEXT_RESOLVE (dlsym);
+    JPROBE_AGENT_CONTEXT_RESOLVE (dlclose);
     g_object_unref (module);
     module = NULL;
   }
@@ -4388,16 +4388,16 @@ frida_agent_context_init_functions (FridaAgentContext * self, GumDarwinModuleRes
 no_libc:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unable to attach to processes without Apple's libc (for now)");
     goto beach;
   }
 missing_symbol:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while resolving functions");
     goto beach;
   }
@@ -4411,31 +4411,31 @@ beach:
 
 #ifdef HAVE_I386
 
-static void frida_agent_context_emit_mach_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx);
-static void frida_agent_context_emit_pthread_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx);
+static void jprobe_agent_context_emit_mach_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx);
+static void jprobe_agent_context_emit_pthread_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx);
 
 static void
-frida_agent_context_emit_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
-  FridaAgentEmitContext ctx;
+  JprobeAgentEmitContext ctx;
 
   ctx.code = code;
   gum_x86_writer_init (&ctx.cw, ctx.code);
   gum_x86_writer_set_target_cpu (&ctx.cw, resolver->cpu_type);
   ctx.mapper = mapper;
 
-  frida_agent_context_emit_mach_stub_body (self, &ctx);
+  jprobe_agent_context_emit_mach_stub_body (self, &ctx);
   gum_x86_writer_put_breakpoint (&ctx.cw);
 
   gum_x86_writer_clear (&ctx.cw);
 }
 
 static void
-frida_agent_context_emit_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
-  FridaAgentEmitContext ctx;
+  JprobeAgentEmitContext ctx;
   guint locals_size;
 
   ctx.code = code;
@@ -4457,7 +4457,7 @@ frida_agent_context_emit_pthread_stub_code (FridaAgentContext * self, guint8 * c
   else
     gum_x86_writer_put_mov_reg_reg (&ctx.cw, GUM_X86_XBX, GUM_X86_XDI);
 
-  frida_agent_context_emit_pthread_stub_body (self, &ctx);
+  jprobe_agent_context_emit_pthread_stub_body (self, &ctx);
 
   gum_x86_writer_put_add_reg_imm (&ctx.cw, GUM_X86_XSP, locals_size);
 
@@ -4475,16 +4475,16 @@ frida_agent_context_emit_pthread_stub_code (FridaAgentContext * self, guint8 * c
 #define EMIT_LEA(dst, src, offset) \
     gum_x86_writer_put_lea_reg_reg_offset (&ctx->cw, GUM_X86_##dst, GUM_X86_##src, offset)
 #define EMIT_LOAD(reg, field) \
-    gum_x86_writer_put_mov_reg_reg_offset_ptr (&ctx->cw, GUM_X86_##reg, GUM_X86_XBX, G_STRUCT_OFFSET (FridaAgentContext, field))
+    gum_x86_writer_put_mov_reg_reg_offset_ptr (&ctx->cw, GUM_X86_##reg, GUM_X86_XBX, G_STRUCT_OFFSET (JprobeAgentContext, field))
 #define EMIT_LOAD_ADDRESS_OF(reg, field) \
-    gum_x86_writer_put_lea_reg_reg_offset (&ctx->cw, GUM_X86_##reg, GUM_X86_XBX, G_STRUCT_OFFSET (FridaAgentContext, field))
+    gum_x86_writer_put_lea_reg_reg_offset (&ctx->cw, GUM_X86_##reg, GUM_X86_XBX, G_STRUCT_OFFSET (JprobeAgentContext, field))
 #define EMIT_STORE(field, reg) \
-    gum_x86_writer_put_mov_reg_offset_ptr_reg (&ctx->cw, GUM_X86_XBX, G_STRUCT_OFFSET (FridaAgentContext, field), GUM_X86_##reg)
+    gum_x86_writer_put_mov_reg_offset_ptr_reg (&ctx->cw, GUM_X86_XBX, G_STRUCT_OFFSET (JprobeAgentContext, field), GUM_X86_##reg)
 #define EMIT_CALL(fun, ...) \
-    gum_x86_writer_put_call_reg_offset_ptr_with_aligned_arguments (&ctx->cw, GUM_CALL_CAPI, GUM_X86_XBX, G_STRUCT_OFFSET (FridaAgentContext, fun), __VA_ARGS__)
+    gum_x86_writer_put_call_reg_offset_ptr_with_aligned_arguments (&ctx->cw, GUM_CALL_CAPI, GUM_X86_XBX, G_STRUCT_OFFSET (JprobeAgentContext, fun), __VA_ARGS__)
 
 static void
-frida_agent_context_emit_mach_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx)
+jprobe_agent_context_emit_mach_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx)
 {
   const gchar * again = "again";
 
@@ -4532,7 +4532,7 @@ frida_agent_context_emit_mach_stub_body (FridaAgentContext * self, FridaAgentEmi
 }
 
 static void
-frida_agent_context_emit_pthread_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx)
+jprobe_agent_context_emit_pthread_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx)
 {
   gssize pointer_size, injector_state_offset;
   const gchar * skip_construction = "skip_construction";
@@ -4569,7 +4569,7 @@ frida_agent_context_emit_pthread_stub_body (FridaAgentContext * self, FridaAgent
   injector_state_offset = -(3 + 1) * pointer_size;
   EMIT_LOAD (XDX, mapped_range);
   gum_x86_writer_put_mov_reg_offset_ptr_reg (&ctx->cw,
-      GUM_X86_XBP, injector_state_offset + G_STRUCT_OFFSET (FridaDarwinInjectorState, mapped_range),
+      GUM_X86_XBP, injector_state_offset + G_STRUCT_OFFSET (JprobeDarwinInjectorState, mapped_range),
       GUM_X86_XDX);
 
   if (ctx->mapper != NULL)
@@ -4628,7 +4628,7 @@ frida_agent_context_emit_pthread_stub_body (FridaAgentContext * self, FridaAgent
   }
 
   EMIT_LOAD (EAX, unload_policy);
-  gum_x86_writer_put_cmp_reg_i32 (&ctx->cw, GUM_X86_EAX, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  gum_x86_writer_put_cmp_reg_i32 (&ctx->cw, GUM_X86_EAX, JPROBE_UNLOAD_POLICY_IMMEDIATE);
   gum_x86_writer_put_jcc_short_label (&ctx->cw, X86_INS_JNE, skip_destruction, GUM_NO_HINT);
 
   if (ctx->mapper != NULL)
@@ -4647,7 +4647,7 @@ frida_agent_context_emit_pthread_stub_body (FridaAgentContext * self, FridaAgent
   gum_x86_writer_put_label (&ctx->cw, skip_destruction);
 
   EMIT_LOAD (EAX, unload_policy);
-  gum_x86_writer_put_cmp_reg_i32 (&ctx->cw, GUM_X86_EAX, FRIDA_UNLOAD_POLICY_DEFERRED);
+  gum_x86_writer_put_cmp_reg_i32 (&ctx->cw, GUM_X86_EAX, JPROBE_UNLOAD_POLICY_DEFERRED);
   gum_x86_writer_put_jcc_short_label (&ctx->cw, X86_INS_JE, skip_detach, GUM_NO_HINT);
 
   EMIT_CALL (pthread_self_impl, 0);
@@ -4665,40 +4665,40 @@ frida_agent_context_emit_pthread_stub_body (FridaAgentContext * self, FridaAgent
  * ARM 32- and 64-bit
  */
 
-static void frida_agent_context_emit_arm_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+static void jprobe_agent_context_emit_arm_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper);
-static void frida_agent_context_emit_arm_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+static void jprobe_agent_context_emit_arm_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper);
-static void frida_agent_context_emit_arm_mach_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx);
-static void frida_agent_context_emit_arm_pthread_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx);
-static void frida_agent_context_emit_arm_load_reg_with_ctx_value (arm_reg reg, guint field_offset, GumThumbWriter * tw);
-static void frida_agent_context_emit_arm_store_reg_in_ctx_value (guint field_offset, arm_reg reg, GumThumbWriter * tw);
+static void jprobe_agent_context_emit_arm_mach_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx);
+static void jprobe_agent_context_emit_arm_pthread_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx);
+static void jprobe_agent_context_emit_arm_load_reg_with_ctx_value (arm_reg reg, guint field_offset, GumThumbWriter * tw);
+static void jprobe_agent_context_emit_arm_store_reg_in_ctx_value (guint field_offset, arm_reg reg, GumThumbWriter * tw);
 
-static void frida_agent_context_emit_arm64_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+static void jprobe_agent_context_emit_arm64_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper);
-static void frida_agent_context_emit_arm64_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+static void jprobe_agent_context_emit_arm64_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper);
-static void frida_agent_context_emit_arm64_mach_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx);
-static void frida_agent_context_emit_arm64_pthread_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx);
+static void jprobe_agent_context_emit_arm64_mach_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx);
+static void jprobe_agent_context_emit_arm64_pthread_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx);
 
 static void
-frida_agent_context_emit_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
   if (resolver->cpu_type == GUM_CPU_ARM)
-    frida_agent_context_emit_arm_mach_stub_code (self, code, resolver, mapper);
+    jprobe_agent_context_emit_arm_mach_stub_code (self, code, resolver, mapper);
   else
-    frida_agent_context_emit_arm64_mach_stub_code (self, code, resolver, mapper);
+    jprobe_agent_context_emit_arm64_mach_stub_code (self, code, resolver, mapper);
 }
 
 static void
-frida_agent_context_emit_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
   if (resolver->cpu_type == GUM_CPU_ARM)
-    frida_agent_context_emit_arm_pthread_stub_code (self, code, resolver, mapper);
+    jprobe_agent_context_emit_arm_pthread_stub_code (self, code, resolver, mapper);
   else
-    frida_agent_context_emit_arm64_pthread_stub_code (self, code, resolver, mapper);
+    jprobe_agent_context_emit_arm64_pthread_stub_code (self, code, resolver, mapper);
 }
 
 
@@ -4707,25 +4707,25 @@ frida_agent_context_emit_pthread_stub_code (FridaAgentContext * self, guint8 * c
  */
 
 static void
-frida_agent_context_emit_arm_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_arm_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
-  FridaAgentEmitContext ctx;
+  JprobeAgentEmitContext ctx;
 
   ctx.code = code;
   gum_thumb_writer_init (&ctx.tw, ctx.code);
   ctx.mapper = mapper;
 
-  frida_agent_context_emit_arm_mach_stub_body (self, &ctx);
+  jprobe_agent_context_emit_arm_mach_stub_body (self, &ctx);
 
   gum_thumb_writer_clear (&ctx.tw);
 }
 
 static void
-frida_agent_context_emit_arm_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_arm_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
-  FridaAgentEmitContext ctx;
+  JprobeAgentEmitContext ctx;
 
   ctx.code = code;
   gum_thumb_writer_init (&ctx.tw, ctx.code);
@@ -4733,20 +4733,20 @@ frida_agent_context_emit_arm_pthread_stub_code (FridaAgentContext * self, guint8
 
   gum_thumb_writer_put_push_regs (&ctx.tw, 5, ARM_REG_R4, ARM_REG_R5, ARM_REG_R6, ARM_REG_R7, ARM_REG_LR);
   gum_thumb_writer_put_mov_reg_reg (&ctx.tw, ARM_REG_R7, ARM_REG_R0);
-  frida_agent_context_emit_arm_pthread_stub_body (self, &ctx);
+  jprobe_agent_context_emit_arm_pthread_stub_body (self, &ctx);
   gum_thumb_writer_put_pop_regs (&ctx.tw, 5, ARM_REG_R4, ARM_REG_R5, ARM_REG_R6, ARM_REG_R7, ARM_REG_PC);
 
   gum_thumb_writer_clear (&ctx.tw);
 }
 
 #define EMIT_ARM_LOAD(reg, field) \
-    frida_agent_context_emit_arm_load_reg_with_ctx_value (ARM_REG_##reg, G_STRUCT_OFFSET (FridaAgentContext, field), &ctx->tw)
+    jprobe_agent_context_emit_arm_load_reg_with_ctx_value (ARM_REG_##reg, G_STRUCT_OFFSET (JprobeAgentContext, field), &ctx->tw)
 #define EMIT_ARM_LOAD_ADDRESS_OF(reg, field) \
-    gum_thumb_writer_put_add_reg_reg_imm (&ctx->tw, ARM_REG_##reg, ARM_REG_R7, G_STRUCT_OFFSET (FridaAgentContext, field))
+    gum_thumb_writer_put_add_reg_reg_imm (&ctx->tw, ARM_REG_##reg, ARM_REG_R7, G_STRUCT_OFFSET (JprobeAgentContext, field))
 #define EMIT_ARM_LOAD_U32(reg, val) \
     gum_thumb_writer_put_ldr_reg_u32 (&ctx->tw, ARM_REG_##reg, val)
 #define EMIT_ARM_STORE(field, reg) \
-    frida_agent_context_emit_arm_store_reg_in_ctx_value (G_STRUCT_OFFSET (FridaAgentContext, field), ARM_REG_##reg, &ctx->tw)
+    jprobe_agent_context_emit_arm_store_reg_in_ctx_value (G_STRUCT_OFFSET (JprobeAgentContext, field), ARM_REG_##reg, &ctx->tw)
 #define EMIT_ARM_MOVE(dstreg, srcreg) \
     gum_thumb_writer_put_mov_reg_reg (&ctx->tw, ARM_REG_##dstreg, ARM_REG_##srcreg)
 #define EMIT_ARM_CALL(reg) \
@@ -4755,7 +4755,7 @@ frida_agent_context_emit_arm_pthread_stub_code (FridaAgentContext * self, guint8
     gum_thumb_writer_put_sub_reg_imm (&ctx->tw, ARM_REG_SP, delta * 4)
 
 static void
-frida_agent_context_emit_arm_mach_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx)
+jprobe_agent_context_emit_arm_mach_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx)
 {
   const gchar * again = "again";
 
@@ -4797,7 +4797,7 @@ frida_agent_context_emit_arm_mach_stub_body (FridaAgentContext * self, FridaAgen
 }
 
 static void
-frida_agent_context_emit_arm_pthread_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx)
+jprobe_agent_context_emit_arm_pthread_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx)
 {
   const gchar * skip_construction = "skip_construction";
   const gchar * skip_dlopen = "skip_dlopen";
@@ -4876,7 +4876,7 @@ frida_agent_context_emit_arm_pthread_stub_body (FridaAgentContext * self, FridaA
   EMIT_ARM_STACK_ADJUSTMENT (-4);
 
   EMIT_ARM_LOAD (R0, unload_policy);
-  gum_thumb_writer_put_cmp_reg_imm (&ctx->tw, ARM_REG_R0, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  gum_thumb_writer_put_cmp_reg_imm (&ctx->tw, ARM_REG_R0, JPROBE_UNLOAD_POLICY_IMMEDIATE);
   gum_thumb_writer_put_bne_label (&ctx->tw, skip_destruction);
 
   if (ctx->mapper != NULL)
@@ -4894,7 +4894,7 @@ frida_agent_context_emit_arm_pthread_stub_body (FridaAgentContext * self, FridaA
   gum_thumb_writer_put_label (&ctx->tw, skip_destruction);
 
   EMIT_ARM_LOAD (R0, unload_policy);
-  gum_thumb_writer_put_cmp_reg_imm (&ctx->tw, ARM_REG_R0, FRIDA_UNLOAD_POLICY_DEFERRED);
+  gum_thumb_writer_put_cmp_reg_imm (&ctx->tw, ARM_REG_R0, JPROBE_UNLOAD_POLICY_DEFERRED);
   gum_thumb_writer_put_beq_label (&ctx->tw, skip_detach);
 
   EMIT_ARM_LOAD (R4, pthread_self_impl);
@@ -4907,7 +4907,7 @@ frida_agent_context_emit_arm_pthread_stub_body (FridaAgentContext * self, FridaA
 }
 
 static void
-frida_agent_context_emit_arm_load_reg_with_ctx_value (arm_reg reg, guint field_offset, GumThumbWriter * tw)
+jprobe_agent_context_emit_arm_load_reg_with_ctx_value (arm_reg reg, guint field_offset, GumThumbWriter * tw)
 {
   arm_reg tmp_reg = (reg != ARM_REG_R0) ? ARM_REG_R0 : ARM_REG_R1;
   gum_thumb_writer_put_push_regs (tw, 1, tmp_reg);
@@ -4918,7 +4918,7 @@ frida_agent_context_emit_arm_load_reg_with_ctx_value (arm_reg reg, guint field_o
 }
 
 static void
-frida_agent_context_emit_arm_store_reg_in_ctx_value (guint field_offset, arm_reg reg, GumThumbWriter * tw)
+jprobe_agent_context_emit_arm_store_reg_in_ctx_value (guint field_offset, arm_reg reg, GumThumbWriter * tw)
 {
   arm_reg tmp_reg = (reg != ARM_REG_R0) ? ARM_REG_R0 : ARM_REG_R1;
   gum_thumb_writer_put_push_regs (tw, 1, tmp_reg);
@@ -4934,10 +4934,10 @@ frida_agent_context_emit_arm_store_reg_in_ctx_value (guint field_offset, arm_reg
  */
 
 static void
-frida_agent_context_emit_arm64_mach_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_arm64_mach_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
-  FridaAgentEmitContext ctx;
+  JprobeAgentEmitContext ctx;
 
   ctx.code = code;
   gum_arm64_writer_init (&ctx.aw, ctx.code);
@@ -4949,7 +4949,7 @@ frida_agent_context_emit_arm64_mach_stub_code (FridaAgentContext * self, guint8 
   gum_arm64_writer_put_mov_reg_reg (&ctx.aw, ARM64_REG_FP, ARM64_REG_SP);
   gum_arm64_writer_put_push_reg_reg (&ctx.aw, ARM64_REG_X19, ARM64_REG_X20);
   gum_arm64_writer_put_push_reg_reg (&ctx.aw, ARM64_REG_X21, ARM64_REG_X22);
-  frida_agent_context_emit_arm64_mach_stub_body (self, &ctx);
+  jprobe_agent_context_emit_arm64_mach_stub_body (self, &ctx);
   gum_arm64_writer_put_pop_reg_reg (&ctx.aw, ARM64_REG_X21, ARM64_REG_X22);
   gum_arm64_writer_put_pop_reg_reg (&ctx.aw, ARM64_REG_X19, ARM64_REG_X20);
   gum_arm64_writer_put_pop_reg_reg (&ctx.aw, ARM64_REG_FP, ARM64_REG_LR);
@@ -4959,10 +4959,10 @@ frida_agent_context_emit_arm64_mach_stub_code (FridaAgentContext * self, guint8 
 }
 
 static void
-frida_agent_context_emit_arm64_pthread_stub_code (FridaAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
+jprobe_agent_context_emit_arm64_pthread_stub_code (JprobeAgentContext * self, guint8 * code, GumDarwinModuleResolver * resolver,
     GumMapper * mapper)
 {
-  FridaAgentEmitContext ctx;
+  JprobeAgentEmitContext ctx;
 
   ctx.code = code;
   gum_arm64_writer_init (&ctx.aw, ctx.code);
@@ -4974,7 +4974,7 @@ frida_agent_context_emit_arm64_pthread_stub_code (FridaAgentContext * self, guin
   gum_arm64_writer_put_mov_reg_reg (&ctx.aw, ARM64_REG_FP, ARM64_REG_SP);
   gum_arm64_writer_put_push_reg_reg (&ctx.aw, ARM64_REG_X19, ARM64_REG_X20);
   gum_arm64_writer_put_mov_reg_reg (&ctx.aw, ARM64_REG_X20, ARM64_REG_X0);
-  frida_agent_context_emit_arm64_pthread_stub_body (self, &ctx);
+  jprobe_agent_context_emit_arm64_pthread_stub_body (self, &ctx);
   gum_arm64_writer_put_pop_reg_reg (&ctx.aw, ARM64_REG_X19, ARM64_REG_X20);
   gum_arm64_writer_put_pop_reg_reg (&ctx.aw, ARM64_REG_FP, ARM64_REG_LR);
   gum_arm64_writer_put_ret (&ctx.aw);
@@ -4982,20 +4982,20 @@ frida_agent_context_emit_arm64_pthread_stub_code (FridaAgentContext * self, guin
 }
 
 #define EMIT_ARM64_LOAD(reg, field) \
-    gum_arm64_writer_put_ldr_reg_reg_offset (&ctx->aw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaAgentContext, field))
+    gum_arm64_writer_put_ldr_reg_reg_offset (&ctx->aw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (JprobeAgentContext, field))
 #define EMIT_ARM64_LOAD_ADDRESS_OF(reg, field) \
-    gum_arm64_writer_put_add_reg_reg_imm (&ctx->aw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaAgentContext, field))
+    gum_arm64_writer_put_add_reg_reg_imm (&ctx->aw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (JprobeAgentContext, field))
 #define EMIT_ARM64_LOAD_U64(reg, val) \
     gum_arm64_writer_put_ldr_reg_u64 (&ctx->aw, ARM64_REG_##reg, val)
 #define EMIT_ARM64_STORE(field, reg) \
-    gum_arm64_writer_put_str_reg_reg_offset (&ctx->aw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (FridaAgentContext, field))
+    gum_arm64_writer_put_str_reg_reg_offset (&ctx->aw, ARM64_REG_##reg, ARM64_REG_X20, G_STRUCT_OFFSET (JprobeAgentContext, field))
 #define EMIT_ARM64_MOVE(dstreg, srcreg) \
     gum_arm64_writer_put_mov_reg_reg (&ctx->aw, ARM64_REG_##dstreg, ARM64_REG_##srcreg)
 #define EMIT_ARM64_CALL(reg) \
     gum_arm64_writer_put_blr_reg_no_auth (&ctx->aw, ARM64_REG_##reg)
 
 static void
-frida_agent_context_emit_arm64_mach_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx)
+jprobe_agent_context_emit_arm64_mach_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx)
 {
   const gchar * again = "again";
 
@@ -5047,7 +5047,7 @@ frida_agent_context_emit_arm64_mach_stub_body (FridaAgentContext * self, FridaAg
 }
 
 static void
-frida_agent_context_emit_arm64_pthread_stub_body (FridaAgentContext * self, FridaAgentEmitContext * ctx)
+jprobe_agent_context_emit_arm64_pthread_stub_body (JprobeAgentContext * self, JprobeAgentEmitContext * ctx)
 {
   const gchar * skip_construction = "skip_construction";
   const gchar * skip_dlopen = "skip_dlopen";
@@ -5127,7 +5127,7 @@ frida_agent_context_emit_arm64_pthread_stub_body (FridaAgentContext * self, Frid
   gum_arm64_writer_put_pop_reg_reg (&ctx->aw, ARM64_REG_X0, ARM64_REG_X1);
 
   EMIT_ARM64_LOAD (W0, unload_policy);
-  gum_arm64_writer_put_ldr_reg_u64 (&ctx->aw, ARM64_REG_X1, FRIDA_UNLOAD_POLICY_IMMEDIATE);
+  gum_arm64_writer_put_ldr_reg_u64 (&ctx->aw, ARM64_REG_X1, JPROBE_UNLOAD_POLICY_IMMEDIATE);
   gum_arm64_writer_put_cmp_reg_reg (&ctx->aw, ARM64_REG_W0, ARM64_REG_W1);
   gum_arm64_writer_put_b_cond_label (&ctx->aw, ARM64_CC_NE, skip_destruction);
 
@@ -5147,7 +5147,7 @@ frida_agent_context_emit_arm64_pthread_stub_body (FridaAgentContext * self, Frid
   gum_arm64_writer_put_label (&ctx->aw, skip_destruction);
 
   EMIT_ARM64_LOAD (W0, unload_policy);
-  gum_arm64_writer_put_ldr_reg_u64 (&ctx->aw, ARM64_REG_X1, FRIDA_UNLOAD_POLICY_DEFERRED);
+  gum_arm64_writer_put_ldr_reg_u64 (&ctx->aw, ARM64_REG_X1, JPROBE_UNLOAD_POLICY_DEFERRED);
   gum_arm64_writer_put_cmp_reg_reg (&ctx->aw, ARM64_REG_W0, ARM64_REG_W1);
   gum_arm64_writer_put_b_cond_label (&ctx->aw, ARM64_CC_EQ, skip_detach);
 
@@ -5163,7 +5163,7 @@ frida_agent_context_emit_arm64_pthread_stub_body (FridaAgentContext * self, Frid
 #endif
 
 static gboolean
-frida_convert_thread_state_for_task (mach_port_t task, thread_state_flavor_t flavor, gconstpointer in_state,
+jprobe_convert_thread_state_for_task (mach_port_t task, thread_state_flavor_t flavor, gconstpointer in_state,
     mach_msg_type_number_t in_state_count, gpointer out_state, mach_msg_type_number_t * out_state_count,
     GError ** error)
 {
@@ -5176,7 +5176,7 @@ frida_convert_thread_state_for_task (mach_port_t task, thread_state_flavor_t fla
   kr = task_threads (task, &threads, &thread_count);
   CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "task_threads");
 
-  kr = frida_convert_thread_state (threads[0], FRIDA_CONVERT_THREAD_STATE_OUT, flavor, in_state, in_state_count,
+  kr = jprobe_convert_thread_state (threads[0], JPROBE_CONVERT_THREAD_STATE_OUT, flavor, in_state, in_state_count,
       out_state, out_state_count);
   CHECK_MACH_RESULT (kr, ==, KERN_SUCCESS, "thread_convert_thread_state");
 
@@ -5187,8 +5187,8 @@ frida_convert_thread_state_for_task (mach_port_t task, thread_state_flavor_t fla
 mach_failure:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_NOT_SUPPORTED,
+        JPROBE_ERROR,
+        JPROBE_ERROR_NOT_SUPPORTED,
         "Unexpected error while converting thread state for task (%s returned '%s')",
         failed_operation, mach_error_string (kr));
     goto beach;
@@ -5209,7 +5209,7 @@ beach:
 }
 
 static mach_port_t
-frida_obtain_thread_port_for_thread_id (mach_port_t task, uint64_t thread_id)
+jprobe_obtain_thread_port_for_thread_id (mach_port_t task, uint64_t thread_id)
 {
   mach_port_t result = MACH_PORT_NULL;
   kern_return_t kr;
@@ -5249,26 +5249,26 @@ frida_obtain_thread_port_for_thread_id (mach_port_t task, uint64_t thread_id)
 }
 
 static kern_return_t
-frida_get_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gpointer state, mach_msg_type_number_t * count)
+jprobe_get_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gpointer state, mach_msg_type_number_t * count)
 {
   kern_return_t kr;
 
   kr = thread_get_state (thread, flavor, state, count);
   if (kr == KERN_SUCCESS)
-    kr = frida_convert_thread_state_inplace (thread, FRIDA_CONVERT_THREAD_STATE_IN, flavor, state, count);
+    kr = jprobe_convert_thread_state_inplace (thread, JPROBE_CONVERT_THREAD_STATE_IN, flavor, state, count);
 
   return kr;
 }
 
 static kern_return_t
-frida_set_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gconstpointer state, mach_msg_type_number_t count)
+jprobe_set_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gconstpointer state, mach_msg_type_number_t count)
 {
   kern_return_t kr;
   thread_state_t remote_state;
 
   remote_state = g_alloca (count * sizeof (integer_t));
 
-  kr = frida_convert_thread_state (thread, FRIDA_CONVERT_THREAD_STATE_OUT, flavor, state, count, remote_state, &count);
+  kr = jprobe_convert_thread_state (thread, JPROBE_CONVERT_THREAD_STATE_OUT, flavor, state, count, remote_state, &count);
   if (kr == KERN_SUCCESS)
     kr = thread_set_state (thread, flavor, remote_state, count);
 
@@ -5276,7 +5276,7 @@ frida_set_thread_state (mach_port_t thread, thread_state_flavor_t flavor, gconst
 }
 
 static kern_return_t
-frida_get_debug_state (mach_port_t thread, gpointer state, GumCpuType cpu_type)
+jprobe_get_debug_state (mach_port_t thread, gpointer state, GumCpuType cpu_type)
 {
   thread_state_flavor_t flavor;
   mach_msg_type_number_t count;
@@ -5297,11 +5297,11 @@ frida_get_debug_state (mach_port_t thread, gpointer state, GumCpuType cpu_type)
   }
 #endif
 
-  return frida_get_thread_state (thread, flavor, state, &count);
+  return jprobe_get_thread_state (thread, flavor, state, &count);
 }
 
 static kern_return_t
-frida_set_debug_state (mach_port_t thread, gconstpointer state, GumCpuType cpu_type)
+jprobe_set_debug_state (mach_port_t thread, gconstpointer state, GumCpuType cpu_type)
 {
   thread_state_flavor_t flavor;
   mach_msg_type_number_t count;
@@ -5322,23 +5322,23 @@ frida_set_debug_state (mach_port_t thread, gconstpointer state, GumCpuType cpu_t
   }
 #endif
 
-  return frida_set_thread_state (thread, flavor, state, count);
+  return jprobe_set_thread_state (thread, flavor, state, count);
 }
 
 static kern_return_t
-frida_convert_thread_state_inplace (mach_port_t thread, FridaConvertThreadStateDirection direction, thread_state_flavor_t flavor,
+jprobe_convert_thread_state_inplace (mach_port_t thread, JprobeConvertThreadStateDirection direction, thread_state_flavor_t flavor,
     gpointer state, mach_msg_type_number_t * count)
 {
-  return frida_convert_thread_state (thread, direction, flavor, state, *count, state, count);
+  return jprobe_convert_thread_state (thread, direction, flavor, state, *count, state, count);
 }
 
 static kern_return_t
-frida_convert_thread_state (mach_port_t thread, FridaConvertThreadStateDirection direction, thread_state_flavor_t flavor,
+jprobe_convert_thread_state (mach_port_t thread, JprobeConvertThreadStateDirection direction, thread_state_flavor_t flavor,
     gconstpointer in_state, mach_msg_type_number_t in_state_count,
     gpointer out_state, mach_msg_type_number_t * out_state_count)
 {
   static gboolean initialized = FALSE;
-  static kern_return_t (* convert) (thread_act_t thread, FridaConvertThreadStateDirection direction, thread_state_flavor_t flavor,
+  static kern_return_t (* convert) (thread_act_t thread, JprobeConvertThreadStateDirection direction, thread_state_flavor_t flavor,
       thread_state_t in_state, mach_msg_type_number_t in_state_count,
       thread_state_t out_state, mach_msg_type_number_t * out_state_count);
 
@@ -5375,7 +5375,7 @@ fallback:
 }
 
 static void
-frida_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at, GumCpuType cpu_type)
+jprobe_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at, GumCpuType cpu_type)
 {
 #ifdef HAVE_I386
   x86_debug_state_t * s = state;
@@ -5401,10 +5401,10 @@ frida_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at,
       ds->__dr7 &= ~(1 << (n * 2));
   }
 #else
-# define FRIDA_S_USER ((uint32_t) (2u << 1))
-# define FRIDA_BAS_ANY ((uint32_t) 15u)
-# define FRIDA_BAS_THUMB ((uint32_t) 12u)
-# define FRIDA_BCR_ENABLE ((uint32_t) 1u)
+# define JPROBE_S_USER ((uint32_t) (2u << 1))
+# define JPROBE_BAS_ANY ((uint32_t) 15u)
+# define JPROBE_BAS_THUMB ((uint32_t) 12u)
+# define JPROBE_BCR_ENABLE ((uint32_t) 1u)
 
   if (cpu_type == GUM_CPU_ARM64)
   {
@@ -5412,18 +5412,18 @@ frida_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at,
 
     s->__bvr[n] = break_at;
     if (break_at != 0)
-      s->__bcr[n] = (FRIDA_BAS_ANY << 5) | FRIDA_S_USER | FRIDA_BCR_ENABLE;
+      s->__bcr[n] = (JPROBE_BAS_ANY << 5) | JPROBE_S_USER | JPROBE_BCR_ENABLE;
     else
       s->__bcr[n] = 0;
   }
   else
   {
     arm_debug_state_t * s = state;
-    uint32_t bas = (break_at & 1) ? FRIDA_BAS_THUMB : FRIDA_BAS_ANY;
+    uint32_t bas = (break_at & 1) ? JPROBE_BAS_THUMB : JPROBE_BAS_ANY;
 
     s->__bvr[n] = break_at;
     if (break_at != 0)
-      s->__bcr[n] = (bas << 5) | FRIDA_S_USER | FRIDA_BCR_ENABLE;
+      s->__bcr[n] = (bas << 5) | JPROBE_S_USER | JPROBE_BCR_ENABLE;
     else
       s->__bcr[n] = 0;
   }
@@ -5431,38 +5431,38 @@ frida_set_nth_hardware_breakpoint (gpointer state, guint n, GumAddress break_at,
 }
 
 static void
-frida_set_hardware_single_step (gpointer debug_state, GumDarwinUnifiedThreadState * thread_state, gboolean enabled, GumCpuType cpu_type)
+jprobe_set_hardware_single_step (gpointer debug_state, GumDarwinUnifiedThreadState * thread_state, gboolean enabled, GumCpuType cpu_type)
 {
 #ifdef HAVE_I386
-# define FRIDA_SINGLE_STEP_ENABLED 0x0100
+# define JPROBE_SINGLE_STEP_ENABLED 0x0100
 
   if (cpu_type == GUM_CPU_AMD64)
   {
     x86_thread_state64_t * state = (x86_thread_state64_t *) &thread_state->uts;
 
     if (enabled)
-      state->__rflags |= FRIDA_SINGLE_STEP_ENABLED;
+      state->__rflags |= JPROBE_SINGLE_STEP_ENABLED;
     else
-      state->__rflags &= ~FRIDA_SINGLE_STEP_ENABLED;
+      state->__rflags &= ~JPROBE_SINGLE_STEP_ENABLED;
   }
   else
   {
     x86_thread_state32_t * state = (x86_thread_state32_t *) &thread_state->uts;
 
     if (enabled)
-      state->__eflags |= FRIDA_SINGLE_STEP_ENABLED;
+      state->__eflags |= JPROBE_SINGLE_STEP_ENABLED;
     else
-      state->__eflags &= ~FRIDA_SINGLE_STEP_ENABLED;
+      state->__eflags &= ~JPROBE_SINGLE_STEP_ENABLED;
   }
 #else
-# define FRIDA_SINGLE_STEP_ENABLED ((uint32_t) 1u)
+# define JPROBE_SINGLE_STEP_ENABLED ((uint32_t) 1u)
 
   if (cpu_type == GUM_CPU_ARM64)
   {
     arm_debug_state64_t * s = debug_state;
 
     if (enabled)
-      s->__mdscr_el1 |= FRIDA_SINGLE_STEP_ENABLED;
+      s->__mdscr_el1 |= JPROBE_SINGLE_STEP_ENABLED;
     else
       s->__mdscr_el1 = 0;
   }
@@ -5471,7 +5471,7 @@ frida_set_hardware_single_step (gpointer debug_state, GumDarwinUnifiedThreadStat
     arm_debug_state32_t * s = debug_state;
 
     if (enabled)
-      s->__mdscr_el1 |= FRIDA_SINGLE_STEP_ENABLED;
+      s->__mdscr_el1 |= JPROBE_SINGLE_STEP_ENABLED;
     else
       s->__mdscr_el1 = 0;
   }
@@ -5479,7 +5479,7 @@ frida_set_hardware_single_step (gpointer debug_state, GumDarwinUnifiedThreadStat
 }
 
 static gboolean
-frida_is_hardware_breakpoint_support_working (void)
+jprobe_is_hardware_breakpoint_support_working (void)
 {
 #if defined (HAVE_IOS) || defined (HAVE_TVOS) || defined (HAVE_XROS)
   static gsize cached_result = 0;
@@ -5516,7 +5516,7 @@ frida_is_hardware_breakpoint_support_working (void)
 }
 
 static gboolean
-frida_find_restart_with_dyld_in_cache (const GumMachoSymbolDetails * details, gpointer user_data)
+jprobe_find_restart_with_dyld_in_cache (const GumMachoSymbolDetails * details, gpointer user_data)
 {
   if (strstr (details->name, "restartWithDyldInCache") != NULL)
   {
@@ -5529,7 +5529,7 @@ frida_find_restart_with_dyld_in_cache (const GumMachoSymbolDetails * details, gp
 }
 
 static GumAddress
-frida_find_run_initializers_call (mach_port_t task, GumCpuType cpu_type, GumAddress start)
+jprobe_find_run_initializers_call (mach_port_t task, GumCpuType cpu_type, GumAddress start)
 {
   GumAddress match = 0;
   const size_t max_size = 2048;
@@ -5541,7 +5541,7 @@ frida_find_run_initializers_call (mach_port_t task, GumCpuType cpu_type, GumAddr
   const uint8_t * code;
   size_t size;
 
-  capstone = frida_create_capstone (cpu_type, start);
+  capstone = jprobe_create_capstone (cpu_type, start);
 
   err = cs_option (capstone, CS_OPT_DETAIL, CS_OPT_ON);
   g_assert (err == CS_ERR_OK);
@@ -5607,7 +5607,7 @@ frida_find_run_initializers_call (mach_port_t task, GumCpuType cpu_type, GumAddr
 }
 
 static GHashTable *
-frida_find_modinit_strcmp_checks (mach_port_t task, GumMachoModule * dyld)
+jprobe_find_modinit_strcmp_checks (mach_port_t task, GumMachoModule * dyld)
 {
   GHashTable * checks;
   GumAddress modinit_start, modinit_end, dyld_strcmp;
@@ -5627,7 +5627,7 @@ frida_find_modinit_strcmp_checks (mach_port_t task, GumMachoModule * dyld)
   address = modinit_start & ~G_GUINT64_CONSTANT (1);
   size = modinit_end - modinit_start;
 
-  capstone = frida_create_capstone (dyld->cpu_type, modinit_start);
+  capstone = jprobe_create_capstone (dyld->cpu_type, modinit_start);
 
   err = cs_option (capstone, CS_OPT_DETAIL, CS_OPT_ON);
   g_assert (err == CS_ERR_OK);
@@ -5704,7 +5704,7 @@ frida_find_modinit_strcmp_checks (mach_port_t task, GumMachoModule * dyld)
 }
 
 static GumAddress
-frida_find_function_end (mach_port_t task, GumCpuType cpu_type, GumAddress start, gsize max_size)
+jprobe_find_function_end (mach_port_t task, GumCpuType cpu_type, GumAddress start, gsize max_size)
 {
   GumAddress match = 0;
   uint64_t address = start & ~G_GUINT64_CONSTANT (1);
@@ -5715,7 +5715,7 @@ frida_find_function_end (mach_port_t task, GumCpuType cpu_type, GumAddress start
   const uint8_t * code;
   size_t size;
 
-  capstone = frida_create_capstone (cpu_type, start);
+  capstone = jprobe_create_capstone (cpu_type, start);
 
   err = cs_option (capstone, CS_OPT_DETAIL, CS_OPT_ON);
   g_assert (err == CS_ERR_OK);
@@ -5807,7 +5807,7 @@ frida_find_function_end (mach_port_t task, GumCpuType cpu_type, GumAddress start
 }
 
 static csh
-frida_create_capstone (GumCpuType cpu_type, GumAddress start)
+jprobe_create_capstone (GumCpuType cpu_type, GumAddress start)
 {
   csh capstone;
   cs_err err;
@@ -5853,7 +5853,7 @@ frida_create_capstone (GumCpuType cpu_type, GumAddress start)
 }
 
 static gboolean
-frida_parse_aslr_option (GVariant * value, FridaAslr * aslr, GError ** error)
+jprobe_parse_aslr_option (GVariant * value, JprobeAslr * aslr, GError ** error)
 {
   const gchar * str;
 
@@ -5862,9 +5862,9 @@ frida_parse_aslr_option (GVariant * value, FridaAslr * aslr, GError ** error)
   str = g_variant_get_string (value, NULL);
 
   if (strcmp (str, "auto") == 0)
-    *aslr = FRIDA_ASLR_AUTO;
+    *aslr = JPROBE_ASLR_AUTO;
   else if (strcmp (str, "disable") == 0)
-    *aslr = FRIDA_ASLR_DISABLE;
+    *aslr = JPROBE_ASLR_DISABLE;
   else
     goto invalid_value;
 
@@ -5873,25 +5873,25 @@ frida_parse_aslr_option (GVariant * value, FridaAslr * aslr, GError ** error)
 invalid_type:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        JPROBE_ERROR,
+        JPROBE_ERROR_INVALID_ARGUMENT,
         "The 'aslr' option must be a string");
     return FALSE;
   }
 invalid_value:
   {
     g_set_error (error,
-        FRIDA_ERROR,
-        FRIDA_ERROR_INVALID_ARGUMENT,
+        JPROBE_ERROR,
+        JPROBE_ERROR_INVALID_ARGUMENT,
         "The 'aslr' option must be set to either 'auto' or 'disable'");
     return FALSE;
   }
 }
 
 static void
-frida_mapper_library_blob_deallocate (FridaMappedLibraryBlob * self)
+jprobe_mapper_library_blob_deallocate (JprobeMappedLibraryBlob * self)
 {
   mach_vm_deallocate (mach_task_self (), self->address, self->allocated_size);
 
-  frida_mapped_library_blob_free (self);
+  jprobe_mapped_library_blob_free (self);
 }

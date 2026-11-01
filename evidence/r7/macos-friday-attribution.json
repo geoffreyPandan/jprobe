@@ -1,0 +1,20 @@
+{
+  "artifact": ".macos-package-staging/package-lhr41rk2/native-package/_jprobe.abi3.so",
+  "asciiFridayFileOffset": 49849523,
+  "outerSection": "__TEXT,__const",
+  "embeddedAgentFileOffset": 22986752,
+  "embeddedAgentLength": 29703056,
+  "embeddedAgentEqualsCurrentBuiltAgentByteForByte": true,
+  "currentAgent": "build-macos-clean/subprojects/frida-core/lib/agent/jprobe-agent.dylib",
+  "agentFridayFileOffset": 26862771,
+  "agentSection": "__TEXT,__cstring",
+  "agentFridayVirtualAddress": "0x199e4b3",
+  "sourceArchive": "upstream/deps/sdk-macos-arm64/lib/c++/libc++.a",
+  "sourceArchiveMember": "libcxx_src_locale.cpp.o",
+  "sourceMemberSHA256": "6824593c07423986cd812386f2a33e13ef7fb9647ce4b9b7d2adca30efc69a75",
+  "sourceMemberFridayOffset": 133405,
+  "matchingStringSequence": "Sunday\\0Monday\\0Tuesday\\0Wednesday\\0Thursday\\0Friday\\0Saturday",
+  "attribution": "libc++ locale weekday names in the currently built embedded macOS agent; not Go, QuickJS or a stale embedded-agent cache.",
+  "scopeNote": "The seven rebuilt SDK target archives do not include lib/c++/libc++.a.",
+  "mutations": "No source, library, build output or active process changed; evidence report only."
+}

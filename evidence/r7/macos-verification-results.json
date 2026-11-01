@@ -1,0 +1,336 @@
+{
+  "candidateVersion": "17.25.0",
+  "platform": "macOS ARM64; tested macOS 26.2 and Python 3.13",
+  "nativeExtensionSha256": "c9ada79686f38e916aada8e800138569465118013557ba14100ccd8cf96c155e",
+  "installedWheelMatchesAuditedExtension": true,
+  "runtimeChecks": {
+    "macOS": {
+      "platform": "macOS-26.2-arm64-arm-64bit-Mach-O",
+      "clientVersion": "17.25.0",
+      "module": "<workspace>/venv-macos-clean/lib/python3.13/site-packages/jprobe/__init__.py",
+      "endpoint": null,
+      "checks": [
+        {
+          "name": "enumerate-processes",
+          "passed": true,
+          "count": 697
+        },
+        {
+          "name": "typescript-compile",
+          "passed": true
+        },
+        {
+          "name": "qjs-rpc-cmodule-date",
+          "passed": true,
+          "probe": {
+            "answer": 42,
+            "day": 5,
+            "iso": "2026-10-30T12:00:00.000Z",
+            "dateString": "Fri, 30 Oct 2026 12:00:00 GMT",
+            "arch": "arm64",
+            "platform": "darwin"
+          }
+        },
+        {
+          "name": "v8-rpc-cmodule-date",
+          "passed": true,
+          "probe": {
+            "answer": 42,
+            "day": 5,
+            "iso": "2026-10-30T12:00:00.000Z",
+            "dateString": "Fri, 30 Oct 2026 12:00:00 GMT",
+            "arch": "arm64",
+            "platform": "darwin"
+          }
+        }
+      ],
+      "extensionSha256": "c9ada79686f38e916aada8e800138569465118013557ba14100ccd8cf96c155e",
+      "pid": 3236,
+      "passed": true
+    },
+    "android": {
+      "platform": "macOS-26.2-arm64-arm-64bit-Mach-O",
+      "clientVersion": "17.25.0",
+      "module": "<workspace>/venv-macos-clean/lib/python3.13/site-packages/jprobe/__init__.py",
+      "endpoint": "127.0.0.1:35000",
+      "checks": [
+        {
+          "name": "enumerate-processes",
+          "passed": true,
+          "count": 154
+        },
+        {
+          "name": "typescript-compile",
+          "passed": true
+        },
+        {
+          "name": "qjs-rpc-cmodule-date",
+          "passed": true,
+          "probe": {
+            "answer": 42,
+            "day": 5,
+            "iso": "2026-10-30T12:00:00.000Z",
+            "dateString": "Fri, 30 Oct 2026 12:00:00 GMT",
+            "arch": "arm64",
+            "platform": "linux"
+          }
+        },
+        {
+          "name": "v8-rpc-cmodule-date",
+          "passed": true,
+          "probe": {
+            "answer": 42,
+            "day": 5,
+            "iso": "2026-10-30T12:00:00.000Z",
+            "dateString": "Fri, 30 Oct 2026 12:00:00 GMT",
+            "arch": "arm64",
+            "platform": "linux"
+          }
+        },
+        {
+          "name": "cli-java-perform",
+          "passed": true
+        }
+      ],
+      "extensionSha256": "c9ada79686f38e916aada8e800138569465118013557ba14100ccd8cf96c155e",
+      "pid": 5236,
+      "passed": true
+    }
+  },
+  "keywordAudit": {
+    "rawAsciiMatches": 1,
+    "rawUtf16LEMatches": 0,
+    "acceptedWholeWord": "Friday",
+    "otherMatches": 0,
+    "injectedJsFiles": 7,
+    "injectedJsMatches": 0
+  },
+  "fatdog": {
+    "firstFullRun": {
+      "clientVersion": "17.25.0",
+      "checks": [
+        {
+          "library": "fox",
+          "activity": "c58Activity",
+          "mode": "attached",
+          "pid": 2994,
+          "beforeScreen": {
+            "pid": 2994,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.c58Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.c58Activity\nTotalTime: 37\nWaitTime: 41\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\nport_scan = 0 (27042-27044)\ndbus_fp   = 0 (/proc/net/tcp)\ncombined  = 0"
+          ],
+          "afterScreen": {
+            "pid": 2994,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 2994,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        },
+        {
+          "library": "owl",
+          "activity": "d59Activity",
+          "mode": "attached",
+          "pid": 3305,
+          "beforeScreen": {
+            "pid": 3305,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.d59Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.d59Activity\nTotalTime: 43\nWaitTime: 47\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\nfd_scan  = 0 (memfd:frida-agent)\nmaps_scan = 0 (stream scan of /proc/self/maps)\ncombined = 0"
+          ],
+          "afterScreen": {
+            "pid": 3305,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 3305,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        },
+        {
+          "library": "sun",
+          "activity": "e60Activity",
+          "mode": "attached",
+          "pid": 3559,
+          "beforeScreen": {
+            "pid": 3559,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.e60Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.e60Activity\nTotalTime: 50\nWaitTime: 55\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\nmaps_hex = 0 (frida bytes in r-xp)\ndt_debug = 1 (runtime DT_DEBUG)\nauxv     = 0 (auxv/ELF consistent)\ncombined = 0 (3-way AND)"
+          ],
+          "afterScreen": {
+            "pid": 3559,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 3559,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        },
+        {
+          "library": "ice",
+          "activity": "f61Activity",
+          "mode": "attached",
+          "pid": 3788,
+          "beforeScreen": {
+            "pid": 3788,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.f61Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.f61Activity\nTotalTime: 54\nWaitTime: 57\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\n=== 冰鉴悬镜（评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 0\n--------------------------------------------------\n① TracerPid : 安全\n② State     : 安全\n③ 父进程链 : 安全\n④ status完整: 安全\n--------------------------------------------------\n命中 0/4 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_siren\n标记B: Fatdog_sren"
+          ],
+          "afterScreen": {
+            "pid": 3788,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 3788,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        },
+        {
+          "library": "dusk",
+          "activity": "h63Activity",
+          "mode": "attached",
+          "pid": 4017,
+          "beforeScreen": {
+            "pid": 4017,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.h63Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.h63Activity\nTotalTime: 92\nWaitTime: 96\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\n=== 暮霭沉沉（6 路评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n--------------------------------------------------\n① timing 侧信道    : 安全\n② 版本/特征嗅探    : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n--------------------------------------------------\n命中 1/6 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_dusk\n标记B: Fatdog_duks"
+          ],
+          "afterScreen": {
+            "pid": 4017,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 4017,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        },
+        {
+          "library": "veil",
+          "activity": "i64Activity",
+          "mode": "attached",
+          "pid": 4270,
+          "beforeScreen": {
+            "pid": 4270,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.i64Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.i64Activity\nTotalTime: 97\nWaitTime: 101\nComplete\n",
+          "detectedDialog": true,
+          "statuses": [
+            "检测结果: 检出 Frida\n\n=== 轻纱覆影（7 路评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 已命中(2)   加载期命中数: 2\n--------------------------------------------------\n① 线程上下文指纹   : 安全\n② 时序交叉验证     : 安全\n③ 可执行段私有脏页 : 命中\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n⑦ libc 段采样校验  : 安全\n--------------------------------------------------\n命中 2/7 路，阈值 >= 2 判检出\n综合判定: 检出\n\n标记A: Fatdog_gauze\n标记B: Fatdog_gauz"
+          ],
+          "afterScreen": {
+            "pid": 4270,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 4270,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": false
+        },
+        {
+          "library": "snow",
+          "activity": "j65Activity",
+          "mode": "attached",
+          "pid": 4539,
+          "beforeScreen": {
+            "pid": 4539,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.j65Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.j65Activity\nTotalTime: 94\nWaitTime: 99\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\n=== 雪落无痕（8 路评分阈值制 · 加载期先跑 · C++ OOP）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n------------------------------------------------------\n① 信号试点自检     : 安全\n② TracerPid 追踪   : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n⑦ libc 段采样校验  : 安全\n⑧ libc 符号完整性  : 安全\n------------------------------------------------------\n命中 1/8 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_snow\n标记B: Fatdog_sow"
+          ],
+          "afterScreen": {
+            "pid": 4539,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 4539,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        }
+      ]
+    },
+    "veilColdRestartRepeat": {
+      "clientVersion": "17.25.0",
+      "checks": [
+        {
+          "library": "veil",
+          "activity": "i64Activity",
+          "mode": "attached",
+          "pid": 4905,
+          "beforeScreen": {
+            "pid": 4905,
+            "arch": "arm64",
+            "loaded": false
+          },
+          "threadSignatureMatchesBeforeScreen": [],
+          "startOutput": "Starting: Intent { cmp=com.fatdog.reverse/.i64Activity }\nStatus: ok\nLaunchState: WARM\nActivity: com.fatdog.reverse/.i64Activity\nTotalTime: 97\nWaitTime: 100\nComplete\n",
+          "detectedDialog": false,
+          "statuses": [
+            "检测结果: 未检出\n\n=== 轻纱覆影（7 路评分阈值制 · 加载期先跑）===\n加载期相位(.init_array): 干净(1)   加载期命中数: 1\n--------------------------------------------------\n① 线程上下文指纹   : 安全\n② 时序交叉验证     : 安全\n③ 可执行段私有脏页 : 安全\n④ 无名可执行代码岛 : 命中\n⑤ ARM64 跳板扫描   : 安全\n⑥ libc 入口比对    : 安全\n⑦ libc 段采样校验  : 安全\n--------------------------------------------------\n命中 1/7 路，阈值 >= 2 判检出\n综合判定: 安全\n\n标记A: Fatdog_gauze\n标记B: Fatdog_gauz"
+          ],
+          "afterScreen": {
+            "pid": 4905,
+            "arch": "arm64",
+            "loaded": true
+          },
+          "pidAfter": 4905,
+          "clientAttachedAtCapture": true,
+          "mapsKeywordMatches": [],
+          "passed": true
+        }
+      ]
+    },
+    "stableAllChecksPassed": false,
+    "note": "First full run: 6/7 detector screens passed; veil detected 2/7 due to private executable dirty pages + anonymous executable maps. Cold restart repeat: veil 1/7, not detected. Thread signature check passed in both."
+  },
+  "localTransientFailure": {
+    "evidence": "verification/local-runtime-final-candidate/results.json",
+    "observed": "One suspended-process initialization timeout before injection",
+    "followup": "Immediate attach and full installed-wheel runtime retests passed; cause not established"
+  },
+  "constraints": "Frida source frozen; envinspector result override is a separate example, not evidence of nondetection."
+}

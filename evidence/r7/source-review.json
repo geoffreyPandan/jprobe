@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    "syntax:rebuild_macos_sdk.py",
+    "syntax:prepare_go_toolchain.py",
+    "syntax:apply_runtime_identity_fixes.py",
+    "syntax:verify_macos_sdk.py",
+    "syntax:package_macos_clean.py",
+    "syntax:prepare_macos_source.py",
+    "syntax:sanitize_macos_extension.py",
+    "syntax:build_linux_vm.sh",
+    "syntax:build_macos.sh",
+    "syntax:build_android_vm.sh",
+    "replay:root",
+    "replay:frida-core",
+    "replay:frida-gum",
+    "replay:frida-python",
+    "replay:frida-tools",
+    "replay:idun",
+    "R7 scheduler matches built Mac source",
+    "runtime identity fixes replay and idempotence"
+  ],
+  "scope": "Source replay, syntax and data validation; no new compilation or device mutation"
+}

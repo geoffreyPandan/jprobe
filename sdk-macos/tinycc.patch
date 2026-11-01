@@ -1,0 +1,20 @@
+diff --git a/meson.build b/meson.build
+index e8c800d..e24cb5d 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1,5 +1,5 @@
+ project('tcc', 'c',
+-  version: '0.9.28rc-frida',
++  version: '0.9.28rc-jprobe',
+ )
+ 
+ cc = meson.get_compiler('c')
+@@ -20,7 +20,7 @@ cdata.set('CONFIG_TCC_PREDEFS', 1)
+ cdata.set('CONFIG_DWARF_VERSION', 4)
+ 
+ tccdir = get_option('prefix') / get_option('libdir') / 'tcc'
+-cdata.set_quoted('CONFIG_TCCDIR', tccdir)
++cdata.set_quoted('CONFIG_TCCDIR', '/usr/local/lib/jprobe/tcc')
+ 
+ host_os = host_machine.system()
+ if host_os == 'windows'

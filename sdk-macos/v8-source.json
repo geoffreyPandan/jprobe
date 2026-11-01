@@ -1,0 +1,6 @@
+{
+  "package": "v8",
+  "sourceUrl": "https://github.com/frida/v8.git",
+  "pinnedCommit": "f6d7f6610f2f21e2817ed180b72ea750a3f63ce8",
+  "actualCommit": "f6d7f6610f2f21e2817ed180b72ea750a3f63ce8"
+}
