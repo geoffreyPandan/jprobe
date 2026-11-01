@@ -1,0 +1,34 @@
+{
+  "app": "com.mobikwik_new 23.75.1 / 2290 ARM64",
+  "libloader_sha256": "0ed7b7264e6673217d32ab57d246ec35f3cb40f325324574f29c4546b39d584d",
+  "observed": [
+    "Native BTL method-hook classification emitted the original Custom ROM event.",
+    "R7 emitted a native Frida event with thread: gdbus; R8 process thread names are jp-main and jp-ipc.",
+    "App property reads returned green while parsed attestation version=300, deviceLocked=0, verifiedBootState=2.",
+    "Changing only the scoped property read to orange removed native internalError 5000000 and exposed a second Custom ROM boot-state event.",
+    "Setting only the detector's unverified-boot policy flag removed that second event without rewriting certificate bytes.",
+    "Generic error key 51dd4a4bd1ebc4ed resolves to Zygisk Detected by App with native policy=19.",
+    "Clearing policy bit 2 produced policy=17 and shouldExit=false; the process survived but a separate RootedDeviceDialog closed the activity.",
+    "RootChecker.isRooted dispatches the startup RootCheckListener. Its original async implementation combines EmulatorDetector and RootBeer."
+  ],
+  "current_candidate": "examples/mobikwik/startup.js",
+  "changes": [
+    "BTL category override",
+    "Scoped boot-property consistency override and boot-state detector policy override",
+    "Zygisk native fatal policy and Java popup response override",
+    "App RootChecker startup callback override"
+  ],
+  "unchanged": [
+    "APK bytes",
+    "global Android properties and module settings",
+    "keystore methods and certificate bytes",
+    "account and payment data"
+  ],
+  "rea_evidence": [
+    "ev_aafa5cb6b9671228b3dd889bbcf4c995af7d28bc3c0f68d23d8237d724598f5e",
+    "ev_d4b6c55f76227dc5fd2a67ac7e997cb0049c10f265b1a01f117c502d57f77c27",
+    "ev_0dc43ae90ebf5c47ec1ec0cfe14eb3236b0102582715f5ac29ad97faa728128e",
+    "ev_04174a9ce717273e2d9cca1007592f04c83f4a62b6100a87857dddb1885095d3"
+  ],
+  "limits": "Startup validation only; completed runtime results are recorded separately."
+}

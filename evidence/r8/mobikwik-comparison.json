@@ -1,0 +1,60 @@
+{
+  "runs": [
+    {
+      "case": "r7-comparison-root-only",
+      "pid": "12029",
+      "events": [
+        {
+          "key": "51dd4a4bd1ebc4ed_6a90621739c779f",
+          "details": [
+            "internalError",
+            "004c4b40",
+            "extendedMessageText",
+            "5000000",
+            "rInternalErrorCode",
+            "5000000",
+            "data",
+            "<NULL>"
+          ]
+        },
+        {
+          "key": "bd63e6d74c0833fc_48215c9c48d2e9e",
+          "details": [
+            "reason",
+            "<unreadable native argument>",
+            "data",
+            "thread: gdbus"
+          ]
+        }
+      ],
+      "frida_ui_suppressed": false,
+      "custom_java_ui_suppressed": false,
+      "frida_popup": true,
+      "process_terminated": true
+    },
+    {
+      "case": "r8-comparison-root-only",
+      "pid": "13209",
+      "events": [
+        {
+          "key": "51dd4a4bd1ebc4ed_6a90621739c779f",
+          "details": [
+            "internalError",
+            "004c4b40",
+            "extendedMessageText",
+            "5000000",
+            "rInternalErrorCode",
+            "5000000",
+            "data",
+            "<NULL>"
+          ]
+        }
+      ],
+      "frida_ui_suppressed": false,
+      "custom_java_ui_suppressed": false,
+      "frida_popup": false,
+      "process_terminated": true
+    }
+  ],
+  "limits": "R8 no corresponding Frida event before native termination; not a stable-startup pass."
+}

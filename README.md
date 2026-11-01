@@ -1,10 +1,13 @@
 # jprobe source and build kit
 
-The current additions preserve the Android R7 candidate and the native macOS
+The current additions include the Android R8 worker-thread correction and a
+MobiKwik startup script, while preserving the R7 candidate and native macOS
 ARM64 client built on 2026-11-01. The r6d base remains pinned and is retained
 below as historical provenance.
 
 - [Android R7 / Linux VM build](docs/ANDROID-R7.md)
+- [Android R8 GLib thread-name correction](docs/ANDROID-R8.md)
+- [MobiKwik Custom ROM experiment and limits](examples/mobikwik/README.md)
 - [macOS build and packaging scripts](docs/MACOS-REBUILD.md)
 - [macOS SDK rebuild and patches](sdk-macos/README.md)
 - [Current verification and known limits](docs/R7-VALIDATION.md)

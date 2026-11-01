@@ -1,0 +1,71 @@
+{
+  "app": "com.mobikwik_new",
+  "version": "23.75.1",
+  "version_code": 2290,
+  "script": "examples/mobikwik/startup.js",
+  "script_sha256": "d8cab03445ad7132ee401ff1fd2605ddbd201c1568879b461cfc8350c93060ca",
+  "server_sha256": "e67927319f6b94059785e210fabc021b09910959ea21dac2e14c5435369ee643",
+  "agent_arm64_sha256": "c6a0367d948c0192bcd4cd60a4e69d9c85b1b022ed91e51ef84f1298e4c914f0",
+  "runs": [
+    {
+      "case": "r8-delivery-r3",
+      "passed": true,
+      "pid": "24796",
+      "durationSeconds": 120.3,
+      "sameProcessThroughout": true,
+      "foreground": [
+        "topResumedActivity=ActivityRecord{ec7796f u0 com.mobikwik_new/.onboarding_revamp.activity.OnboardingActivity t319}",
+        "ResumedActivity: ActivityRecord{ec7796f u0 com.mobikwik_new/.onboarding_revamp.activity.OnboardingActivity t319}"
+      ],
+      "visibleText": [
+        "VPN Connection Detected",
+        "A VPN connection is detected on your mobile device. For a safe payment experience, please turn off your VPN.",
+        "Disable VPN",
+        "Skip and Continue"
+      ],
+      "uiPackages": [
+        "com.mobikwik_new"
+      ],
+      "vpnDialogSkipped": false,
+      "root_callback_override_seen": true,
+      "frida_popup_override": false,
+      "custom_rom_popup_override": false,
+      "stopped_by_next_test_after_validation": true
+    },
+    {
+      "case": "r8-delivery-r4",
+      "passed": true,
+      "pid": "25516",
+      "durationSeconds": 120.4,
+      "sameProcessThroughout": true,
+      "foreground": [
+        "topResumedActivity=ActivityRecord{bf2fc13 u0 com.mobikwik_new/.onboarding_revamp.activity.OnboardingActivity t320}",
+        "ResumedActivity: ActivityRecord{bf2fc13 u0 com.mobikwik_new/.onboarding_revamp.activity.OnboardingActivity t320}"
+      ],
+      "visibleText": [
+        "Get started with \nMobiKwik",
+        "+91",
+        "Enter mobile number",
+        "Allow MobiKwik and Mobikwik Lending to fetch your credit score from RBI registered Credit Information Companies",
+        "Continue",
+        "By continuing, I accept the Terms of Service"
+      ],
+      "uiPackages": [
+        "com.mobikwik_new"
+      ],
+      "vpnDialogSkipped": true,
+      "root_callback_override_seen": true,
+      "frida_popup_override": false,
+      "custom_rom_popup_override": false,
+      "stopped_by_next_test_after_validation": false
+    }
+  ],
+  "native_observation_run": "r8-delivery-r3",
+  "native_security_queue_events": 0,
+  "method_records_inspected": 24,
+  "runtime_worker_names": [
+    "jp-main",
+    "jp-ipc"
+  ],
+  "scope": "Two app cold starts, each with at least 120 seconds of liveness and foreground verification. R3 ended on the app VPN warning; R4 skipped that warning and ended on the phone-entry onboarding screen. No login or payment was attempted. No general nondetection claim."
+}

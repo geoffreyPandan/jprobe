@@ -1,0 +1,104 @@
+[
+  {
+    "name": "jprobe-server",
+    "size": 84855816,
+    "sha256": "e67927319f6b94059785e210fabc021b09910959ea21dac2e14c5435369ee643",
+    "frida_ascii": 0,
+    "frida_utf16le": 0,
+    "old_thread_names": {
+      "gdbus": 0,
+      "gmain": 0,
+      "gum-js-loop": 0
+    },
+    "new_thread_names": {
+      "jp-ipc": 4,
+      "jp-main": 4,
+      "jp-js-loop": 2
+    }
+  },
+  {
+    "name": "jprobe-inject",
+    "size": 84607480,
+    "sha256": "d633bb31330a64ce6fad7a9218ad08a436535594c50dfc95dbeb02dd90fec086",
+    "frida_ascii": 0,
+    "frida_utf16le": 0,
+    "old_thread_names": {
+      "gdbus": 0,
+      "gmain": 0,
+      "gum-js-loop": 0
+    },
+    "new_thread_names": {
+      "jp-ipc": 4,
+      "jp-main": 4,
+      "jp-js-loop": 2
+    }
+  },
+  {
+    "name": "jprobe-agent-arm64.so",
+    "size": 39114480,
+    "sha256": "c6a0367d948c0192bcd4cd60a4e69d9c85b1b022ed91e51ef84f1298e4c914f0",
+    "frida_ascii": 0,
+    "frida_utf16le": 0,
+    "old_thread_names": {
+      "gdbus": 0,
+      "gmain": 0,
+      "gum-js-loop": 0
+    },
+    "new_thread_names": {
+      "jp-ipc": 1,
+      "jp-main": 1,
+      "jp-js-loop": 1
+    }
+  },
+  {
+    "name": "jprobe-gadget-arm64.so",
+    "size": 39409456,
+    "sha256": "316e763e08c9bff6e189bb1659fd536e440bada7de08a818b63c7fe36ae96ed9",
+    "frida_ascii": 0,
+    "frida_utf16le": 0,
+    "old_thread_names": {
+      "gdbus": 0,
+      "gmain": 0,
+      "gum-js-loop": 0
+    },
+    "new_thread_names": {
+      "jp-ipc": 1,
+      "jp-main": 1,
+      "jp-js-loop": 1
+    }
+  },
+  {
+    "name": "jprobe-agent-arm.so",
+    "size": 23466224,
+    "sha256": "6aab14a37be4e93421324b7371acc8cf4a6cd5b5d838b401afb999f19e3b10c8",
+    "frida_ascii": 0,
+    "frida_utf16le": 0,
+    "old_thread_names": {
+      "gdbus": 0,
+      "gmain": 0,
+      "gum-js-loop": 0
+    },
+    "new_thread_names": {
+      "jp-ipc": 1,
+      "jp-main": 1,
+      "jp-js-loop": 1
+    }
+  },
+  {
+    "name": "jprobe-gadget-arm.so",
+    "size": 23654672,
+    "sha256": "e174c5c2ecfb1d0c8abe0bcd634a5e14cb84c08dc2607f5f5ac79a24bfc3418b",
+    "frida_ascii": 0,
+    "frida_utf16le": 0,
+    "old_thread_names": {
+      "gdbus": 0,
+      "gmain": 0,
+      "gum-js-loop": 0
+    },
+    "new_thread_names": {
+      "jp-ipc": 1,
+      "jp-main": 1,
+      "jp-js-loop": 1
+    }
+  }
+]
