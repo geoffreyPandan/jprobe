@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-11-03T15:51:22+08:00",
+  "status": "FIXED_AND_VALIDATED",
+  "scope": {
+    "device": "MuMu isolated clone",
+    "serial": "127.0.0.1:16480",
+    "androidApi": 32,
+    "architecture": "arm64",
+    "runtimes": [
+      "qjs",
+      "v8"
+    ]
+  },
+  "failure": {
+    "signal": "SIGSEGV",
+    "faultAddress": "0x10",
+    "frame": "artQuickGenericJniTrampoline+88",
+    "libartSha256": "0d1c81501da5a003ebbb5934caa567aab2794e6699aeb7861fa2208feee0499b",
+    "rootCause": "The first native ArtMethod clone was not yet observed or published when a moving GC changed the original method's compressed declaring-class reference. The clone retained a stale reference whose class+16 field was zero.",
+    "deterministicReproducer": {
+      "runtime": "v8",
+      "counts": {
+        "PASS": 3,
+        "FAIL": 3
+      },
+      "originalClassAfterGc": 315441232,
+      "replacementClassAfterGc": 315967264,
+      "originalClass16AfterGc": 315441464,
+      "replacementClass16AfterGc": 0,
+      "evidence": "verification/jprobe-regression/repair-java-cold-20261103/force-runtime-gc-v8"
+    }
+  },
+  "repair": {
+    "initializeGcObserversBeforeClone": true,
+    "refetchMethodAfterInitialization": true,
+    "refreshDeclaringClassUnderPublicationMutex": true,
+    "legacyApiBelow23OrderingPreserved": true,
+    "buildPipelineUsesCanonicalBridgeSource": true,
+    "oldBundleSha256": "8c9036757723e15202a7255404f23b7446d00e462bdd79299a31cf3497345401",
+    "newBundleSha256": "ae4a20b8c1de145498156e9f612bc5a7e681bca1434f7ba517c49304e2dd0d51"
+  },
+  "validation": {
+    "unitTests": {
+      "PASS": 14,
+      "FAIL": 0
+    },
+    "coldBootCampaign": {
+      "state": "PASSED",
+      "distinctBootIds": 3,
+      "jobs": 6,
+      "counts": {
+        "PASS": 48,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      },
+      "evidence": "verification/jprobe-regression/repair-java-cold-20261103/cold-fixed-rerun/campaign.json"
+    },
+    "forcedGc": {
+      "qjs": {
+        "counts": {
+          "PASS": 6,
+          "FAIL": 0
+        },
+        "readyClassEqual": true,
+        "afterPublishGcClassEqual": true,
+        "hookedResult": 43,
+        "restoredResult": 42,
+        "evidence": "verification/jprobe-regression/repair-java-cold-20261103/force-fixed-postpublish-qjs"
+      },
+      "v8": {
+        "counts": {
+          "PASS": 6,
+          "FAIL": 0
+        },
+        "readyClassEqual": true,
+        "afterPublishGcClassEqual": true,
+        "hookedResult": 43,
+        "restoredResult": 42,
+        "evidence": "verification/jprobe-regression/repair-java-cold-20261103/force-fixed-postpublish-v8"
+      }
+    },
+    "functional": {
+      "qjs": {
+        "PASS": 43,
+        "FAIL": 0,
+        "SKIP": 0,
+        "evidence": "verification/jprobe-regression/repair-java-cold-20261103/functional-fixed-qjs"
+      },
+      "v8": {
+        "PASS": 42,
+        "FAIL": 0,
+        "SKIP": 1,
+        "evidence": "verification/jprobe-regression/repair-java-cold-20261103/functional-fixed-v8"
+      }
+    },
+    "deviceCleanup": {
+      "bootCompleted": true,
+      "jprobeProcessesRemaining": 0
+    }
+  },
+  "limitations": [
+    "Runtime validation is Android 12/API 32 ARM64 only",
+    "ARM32 is statically audited but not runtime-tested",
+    "No new two-hour R9 soak",
+    "No root-disabled Gadget rerun",
+    "No complete official Core/Gum suite"
+  ]
+}

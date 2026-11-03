@@ -1,0 +1,6 @@
+{
+  "state": "BUILT",
+  "baseline": "/home/jim/jprobe/candidates/thread-names-r8/source",
+  "patchSha256": "98dc1023e2e4254519bb8abca4585de2c0b592fe9794271964060af65ef8a51c",
+  "source": "/home/jim/jprobe/candidates/module-observer-r9/source"
+}

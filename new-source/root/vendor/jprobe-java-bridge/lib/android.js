@@ -1859,6 +1859,13 @@ set_replacement_method (gpointer original_method,
 {
   g_mutex_lock (&lock);
 
+#if ${getAndroidApiLevel() >= 23 ? 1 : 0}
+  /* A GC may have moved the class while this native ArtMethod clone was not
+   * yet in the table. Publish its current class reference under the same lock
+   * used by the GC observers, so that neither side can miss the update. */
+  *((uint32_t *) replacement_method) = *((uint32_t *) original_method);
+#endif
+
   g_hash_table_insert (methods, original_method, replacement_method);
   g_hash_table_insert (replacements, replacement_method, original_method);
 
@@ -3706,10 +3713,11 @@ class ArtMethodMangler {
 
   replace (impl, isInstanceMethod, argTypes, vm, api) {
     const { kAccCompileDontBother, artNterpEntryPoint } = api;
+    const hasNativeArtMethod = getAndroidApiLevel() >= 23;
 
     this.originalMethod = fetchArtMethod(this.methodId, vm);
 
-    const originalFlags = this.originalMethod.accessFlags;
+    let originalFlags = this.originalMethod.accessFlags;
 
     if ((originalFlags & kAccXposedHookedMethod) !== 0 && xposedIsSupported()) {
       const hookInfo = this.originalMethod.jniCode;
@@ -3718,6 +3726,16 @@ class ArtMethodMangler {
     }
 
     const { hookedMethodId } = this;
+
+    if (hasNativeArtMethod) {
+      // First-hook initialization can allocate and reach GC safepoints. Finish
+      // installing the GC observers before creating an untracked method clone.
+      notifyArtMethodHooked(hookedMethodId, vm);
+      this.originalMethod = fetchArtMethod(hookedMethodId, vm);
+      if (hookedMethodId.equals(this.methodId)) {
+        originalFlags = this.originalMethod.accessFlags;
+      }
+    }
 
     const replacementMethodId = cloneArtMethod(hookedMethodId, vm);
     this.replacementMethodId = replacementMethodId;
@@ -3759,7 +3777,9 @@ class ArtMethodMangler {
 
     artController.replacedMethods.set(hookedMethodId, replacementMethodId);
 
-    notifyArtMethodHooked(hookedMethodId, vm);
+    if (!hasNativeArtMethod) {
+      notifyArtMethodHooked(hookedMethodId, vm);
+    }
   }
 
   revert (vm) {

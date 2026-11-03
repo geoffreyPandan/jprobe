@@ -112,7 +112,7 @@ index c62d239..67faab8 100644
    rel_name = g_strjoinv ("/", parts);
    name = g_strconcat ("/", rel_name, NULL);
 diff --git a/bindings/gumjs/gumquickcore.c b/bindings/gumjs/gumquickcore.c
-index 3af86da..cea644d 100644
+index 3af86da9..c93d4117 100644
 --- a/bindings/gumjs/gumquickcore.c
 +++ b/bindings/gumjs/gumquickcore.c
 @@ -201,7 +201,7 @@ GUMJS_DECLARE_FUNCTION (gumjs_set_unhandled_exception_callback)
@@ -160,6 +160,15 @@ index 3af86da..cea644d 100644
  {
    return JS_NewUint32 (ctx, gum_peek_private_memory_usage ());
  }
+@@ -5043,7 +5043,7 @@ GUMJS_DEFINE_CONSTRUCTOR (gumjs_native_callback_construct)
+     abi = GUM_DEFAULT_FFI_ABI;
+   }
+ 
+-  cb->closure = ffi_closure_alloc (sizeof (ffi_closure), &ptr->value);
++  cb->closure = gum_ffi_closure_alloc (sizeof (ffi_closure), &ptr->value);
+   if (cb->closure == NULL)
+     goto alloc_failed;
+ 
 diff --git a/bindings/gumjs/gumquickscript.c b/bindings/gumjs/gumquickscript.c
 index 9a251ab..8a18b54 100644
 --- a/bindings/gumjs/gumquickscript.c
@@ -187,7 +196,7 @@ index a976ec1..0c0d66f 100644
  
      if (program->runtime == NULL)
 diff --git a/bindings/gumjs/gumv8core.cpp b/bindings/gumjs/gumv8core.cpp
-index ce57759..ef31734 100644
+index ce57759d..8add92f7 100644
 --- a/bindings/gumjs/gumv8core.cpp
 +++ b/bindings/gumjs/gumv8core.cpp
 @@ -222,7 +222,7 @@ GUMJS_DECLARE_FUNCTION (gumjs_wait_for_event)
@@ -234,6 +243,15 @@ index ce57759..ef31734 100644
  {
    info.GetReturnValue ().Set (gum_peek_private_memory_usage ());
  }
+@@ -3896,7 +3896,7 @@ GUMJS_DEFINE_CONSTRUCTOR (gumjs_native_callback_construct)
+   }
+ 
+   callback->closure =
+-      (ffi_closure *) ffi_closure_alloc (sizeof (ffi_closure), &func);
++      (ffi_closure *) gum_ffi_closure_alloc (sizeof (ffi_closure), &func);
+   if (callback->closure == NULL)
+   {
+     _gum_v8_throw_ascii_literal (isolate, "failed to allocate closure");
 diff --git a/bindings/gumjs/gumv8script.cpp b/bindings/gumjs/gumv8script.cpp
 index 835cf3f..842bc52 100644
 --- a/bindings/gumjs/gumv8script.cpp
@@ -373,25 +391,43 @@ index 461c08c..bf9e77c 100644
    requires_private: ['frida-gum-' + api_version],
    subdirs: install_header_basedir,
 diff --git a/ext/dbghelp/meson.build b/ext/dbghelp/meson.build
-index 30d590d..ec01315 100644
+index 30d590d4..d36fb5f7 100644
 --- a/ext/dbghelp/meson.build
 +++ b/ext/dbghelp/meson.build
-@@ -1,4 +1,4 @@
+@@ -1,7 +1,7 @@
 -dbghelp_prefix = get_option('prefix') / get_option('libdir') / 'frida'
+-uninstalled_dbghelp_prefix = meson.current_source_dir()
+-
+-if host_os_family == 'windows'
+-  dbghelp_dll = files(host_arch / 'dbghelp.dll')
+-  install_data(dbghelp_dll, install_dir: dbghelp_prefix / host_arch)
+-endif
 +dbghelp_prefix = get_option('prefix') / get_option('libdir') / 'jprobe'
- uninstalled_dbghelp_prefix = meson.current_source_dir()
- 
- if host_os_family == 'windows'
++uninstalled_dbghelp_prefix = meson.current_source_dir()
++
++if host_os_family == 'windows'
++  dbghelp_dll = files(host_arch / 'dbghelp.dll')
++  install_data(dbghelp_dll, install_dir: dbghelp_prefix / host_arch)
++endif
 diff --git a/ext/symsrv/meson.build b/ext/symsrv/meson.build
-index 0fdb4c4..f8a7205 100644
+index 0fdb4c43..3728c3cf 100644
 --- a/ext/symsrv/meson.build
 +++ b/ext/symsrv/meson.build
-@@ -1,4 +1,4 @@
+@@ -1,7 +1,7 @@
 -symsrv_prefix = get_option('prefix') / get_option('libdir') / 'frida'
+-uninstalled_symsrv_prefix = meson.current_source_dir()
+-
+-if host_os_family == 'windows'
+-  symsrv_dll = files(host_arch / 'symsrv.dll')
+-  install_data(symsrv_dll, install_dir: symsrv_prefix / host_arch)
+-endif
 +symsrv_prefix = get_option('prefix') / get_option('libdir') / 'jprobe'
- uninstalled_symsrv_prefix = meson.current_source_dir()
- 
- if host_os_family == 'windows'
++uninstalled_symsrv_prefix = meson.current_source_dir()
++
++if host_os_family == 'windows'
++  symsrv_dll = files(host_arch / 'symsrv.dll')
++  install_data(symsrv_dll, install_dir: symsrv_prefix / host_arch)
++endif
 diff --git a/gum/backend-arm64/guminterceptor-arm64.c b/gum/backend-arm64/guminterceptor-arm64.c
 index 743664d..a57a600 100644
 --- a/gum/backend-arm64/guminterceptor-arm64.c
@@ -457,10 +493,24 @@ index bf0d580..bcd9a75 100644
  
    for (i = 0; i != params->len; i++)
 diff --git a/gum/backend-elf/gummodule-elf.c b/gum/backend-elf/gummodule-elf.c
-index 8e5dcae..2172255 100644
+index 8e5dcae6..c497c942 100644
 --- a/gum/backend-elf/gummodule-elf.c
 +++ b/gum/backend-elf/gummodule-elf.c
-@@ -600,7 +600,22 @@ gum_try_resolve_export_by_name (const GumExportDetails * details,
+@@ -556,7 +556,12 @@ gum_native_module_find_export_by_name (GumModule * module,
+         gum_android_try_resolve_magic_export (self->path, symbol_name, &addr))
+       return addr;
+ 
+-    if (module == gum_android_get_linker_module ())
++    /* Bionic notifies debuggers inside link_image(), before set_linked().
++     * Even RTLD_NOLOAD may recursively try to load that soinfo and abort.
++     * Resolve this module's exports from its mapped ELF during that window;
++     * do not cache a failed handle, so later lookups still use dlsym(). */
++    if (module == gum_android_get_linker_module () ||
++        _gum_android_module_is_unlinked (self))
+     {
+       GumFindExportByNameContext ctx;
+ 
+@@ -600,7 +605,22 @@ gum_try_resolve_export_by_name (const GumExportDetails * details,
  GumAddress
  gum_module_find_global_export_by_name (const gchar * symbol_name)
  {
@@ -536,20 +586,21 @@ index dafd0bd..2fbe3e6 100644
  
    return &gum_libc_info;
 diff --git a/gum/backend-posix/gummemory-posix.c b/gum/backend-posix/gummemory-posix.c
-index d5de607..3db3955 100644
+index d5de6074..479af00e 100644
 --- a/gum/backend-posix/gummemory-posix.c
 +++ b/gum/backend-posix/gummemory-posix.c
-@@ -12,6 +12,9 @@
+@@ -12,6 +12,10 @@
  #include <errno.h>
  #include <unistd.h>
  #include <sys/mman.h>
 +#ifdef HAVE_ANDROID
++# include <sys/prctl.h>
 +# include <sys/syscall.h>
 +#endif
  #ifdef HAVE_PROSPERO
  # include <ps5/kernel.h>
  #endif
-@@ -78,6 +81,27 @@ gum_memory_allocate (gpointer address,
+@@ -78,6 +82,27 @@ gum_memory_allocate (gpointer address,
    return gum_memory_allocate_internal (address, size, alignment, prot, 0);
  }
  
@@ -577,7 +628,7 @@ index d5de607..3db3955 100644
  static gpointer
  gum_memory_allocate_internal (gpointer address,
                                gsize size,
-@@ -237,6 +261,25 @@ gum_allocate_page_aligned (gpointer address,
+@@ -237,8 +262,41 @@ gum_allocate_page_aligned (gpointer address,
    }
  #endif
  
@@ -602,7 +653,23 @@ index d5de607..3db3955 100644
 +
    result = mmap (address, size, prot, base_flags | region_flags, -1, 0);
  
++#ifdef HAVE_ANDROID
++  if (result != MAP_FAILED)
++  {
++    gint saved_errno = errno;
++
++    /* Attribute our own anonymous pages, including bridge pages allocated RW
++     * and made executable later. Unsupported kernels retain the mmap result.
++     * Do not rename existing mappings or change their protection/content. */
++    prctl (PR_SET_VMA, PR_SET_VMA_ANON_NAME, (gulong) result, (gulong) size,
++        (gulong) "jprobe-page");
++    errno = saved_errno;
++  }
++#endif
++
  #ifdef HAVE_PROSPERO
+   if (result == MAP_FAILED && (prot & PROT_EXEC) != 0)
+   {
 diff --git a/gum/devkit/meson.build b/gum/devkit/meson.build
 index 1cdb5d9..be28c72 100644
 --- a/gum/devkit/meson.build
@@ -1650,3 +1717,146 @@ index aa0b764..a6a9071 100644
  namespace Gum {
  	public class InstanceTracker : GLib.Object {
  		public InstanceTracker ();
+diff --git a/gum/backend-linux/gumandroid.c b/gum/backend-linux/gumandroid.c
+index e7dc45d7..02431efb 100644
+--- a/gum/backend-linux/gumandroid.c
++++ b/gum/backend-linux/gumandroid.c
+@@ -31,6 +31,7 @@
+ 
+ typedef struct _GumEnumerateModulesContext GumEnumerateModulesContext;
+ typedef struct _GumHandleContext GumHandleContext;
++typedef struct _GumModuleLinkState GumModuleLinkState;
+ 
+ typedef struct _GumSoinfoDetails GumSoinfoDetails;
+ typedef gboolean (* GumFoundSoinfoFunc) (const GumSoinfoDetails * details,
+@@ -67,6 +68,12 @@ struct _GumHandleContext
+   gpointer caller_address;
+ };
+ 
++struct _GumModuleLinkState
++{
++  GumNativeModule * module;
++  gboolean unlinked;
++};
++
+ struct _GumEnumerateModulesContext
+ {
+   GumFoundModuleFunc func;
+@@ -397,6 +404,8 @@ static gboolean gum_emit_module_from_soinfo (const GumSoinfoDetails * details,
+     GumEnumerateModulesContext * ctx);
+ static gpointer gum_create_module_handle (GumNativeModule * module,
+     gpointer user_data);
++static gboolean gum_query_module_link_state (const GumSoinfoDetails * details,
++    gpointer user_data);
+ static void gum_enumerate_soinfo (GumFoundSoinfoFunc func, gpointer user_data);
+ static void gum_init_soinfo_details (GumSoinfoDetails * details, GumSoinfo * si,
+     GumLinkerApi * api, GHashTable ** ranges);
+@@ -780,6 +789,31 @@ gum_emit_module_from_soinfo (const GumSoinfoDetails * details,
+   return carry_on;
+ }
+ 
++gboolean
++_gum_android_module_is_unlinked (GumNativeModule * self)
++{
++  GumModuleLinkState state = { self, FALSE };
++
++  if (gum_android_get_linker_flavor () == GUM_ANDROID_LINKER_NATIVE)
++    gum_enumerate_soinfo (gum_query_module_link_state, &state);
++
++  return state.unlinked;
++}
++
++static gboolean
++gum_query_module_link_state (const GumSoinfoDetails * details,
++                             gpointer user_data)
++{
++  GumModuleLinkState * state = user_data;
++
++  if (details->body->base != state->module->range.base_address ||
++      strcmp (details->path, state->module->path) != 0)
++    return TRUE;
++
++  state->unlinked = (details->body->flags & GUM_SOINFO_LINKED) == 0;
++  return FALSE;
++}
++
+ static gpointer
+ gum_create_module_handle (GumNativeModule * module,
+                           gpointer user_data)
+diff --git a/gum/backend-elf/gummodule-elf.h b/gum/backend-elf/gummodule-elf.h
+index e7fdc973..2a23c7af 100644
+--- a/gum/backend-elf/gummodule-elf.h
++++ b/gum/backend-elf/gummodule-elf.h
+@@ -51,6 +51,11 @@ G_GNUC_INTERNAL gpointer _gum_native_module_get_handle (GumNativeModule * self);
+ G_GNUC_INTERNAL GumElfModule * _gum_native_module_get_elf_module (
+     GumNativeModule * self);
+ 
++#ifdef HAVE_ANDROID
++G_GNUC_INTERNAL gboolean _gum_android_module_is_unlinked (
++    GumNativeModule * self);
++#endif
++
+ G_GNUC_INTERNAL gchar * _gum_native_module_find_path_by_address (
+     GumAddress address);
+ 
+diff --git a/bindings/gumjs/gumffi.c b/bindings/gumjs/gumffi.c
+index e4c6b2d9..77690d25 100644
+--- a/bindings/gumjs/gumffi.c
++++ b/bindings/gumjs/gumffi.c
+@@ -9,6 +9,43 @@
+ #include "gumffi.h"
+ 
+ #include <stdint.h>
++#ifdef HAVE_ANDROID
++# include "gummemory.h"
++# include <errno.h>
++# include <sys/prctl.h>
++#endif
++
++gpointer
++gum_ffi_closure_alloc (gsize size,
++                       gpointer * code)
++{
++  gpointer result;
++
++  result = ffi_closure_alloc (size, code);
++
++#ifdef HAVE_ANDROID
++  if (result != NULL)
++  {
++    gint saved_errno = errno;
++    gsize page_size = gum_query_page_size ();
++    gsize mask = ~(page_size - 1);
++    gsize writable_page = GPOINTER_TO_SIZE (result) & mask;
++    gsize executable_page = GPOINTER_TO_SIZE (*code) & mask;
++
++    /* libffi allocates closure pages outside Gum's allocator. Attribute only
++     * the pages it just handed us; file-backed aliases keep their own names.
++     * Naming is optional and must not change allocation or errno semantics. */
++    prctl (PR_SET_VMA, PR_SET_VMA_ANON_NAME, writable_page, page_size,
++        (gulong) "jprobe-closure");
++    if (executable_page != writable_page)
++      prctl (PR_SET_VMA, PR_SET_VMA_ANON_NAME, executable_page, page_size,
++          (gulong) "jprobe-closure");
++    errno = saved_errno;
++  }
++#endif
++
++  return result;
++}
+ 
+ typedef struct _GumFFITypeMapping GumFFITypeMapping;
+ typedef struct _GumFFIABIMapping GumFFIABIMapping;
+diff --git a/bindings/gumjs/gumffi.h b/bindings/gumjs/gumffi.h
+index 24c35b83..c840b5f5 100644
+--- a/bindings/gumjs/gumffi.h
++++ b/bindings/gumjs/gumffi.h
+@@ -49,6 +49,8 @@ union _GumFFIArg
+ extern ffi_type gum_ffi_type_size_t;
+ extern ffi_type gum_ffi_type_ssize_t;
+ 
++G_GNUC_INTERNAL gpointer gum_ffi_closure_alloc (gsize size, gpointer * code);
++
+ G_GNUC_INTERNAL GumFFIArg * gum_ffi_ret_value (const ffi_type * type,
+     gpointer ret);
+ G_GNUC_INTERNAL gboolean gum_ffi_try_get_type_by_name (const gchar * name,

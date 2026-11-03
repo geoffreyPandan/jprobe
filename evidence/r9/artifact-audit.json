@@ -1,0 +1,68 @@
+{
+  "jprobe-server": {
+    "sha256": "25924fdeefbfcc2fccab9338858829b4e47ef0de7b403d6deb347b8de4745040",
+    "size": 84856456,
+    "asciiFrida": 0,
+    "utf16Frida": 0,
+    "oldThreads": {
+      "gmain": 0,
+      "gdbus": 0,
+      "gum-js-loop": 0
+    }
+  },
+  "jprobe-inject": {
+    "sha256": "53dd1eebb4a21017a742743c137b2691e4f8de8af65c4560d2a717ce0db6bc85",
+    "size": 84607976,
+    "asciiFrida": 0,
+    "utf16Frida": 0,
+    "oldThreads": {
+      "gmain": 0,
+      "gdbus": 0,
+      "gum-js-loop": 0
+    }
+  },
+  "jprobe-agent-arm64.so": {
+    "sha256": "a792aa0297203bcce386312b801dab225d2e1e9aea2e43526b010968daeaf606",
+    "size": 39114480,
+    "asciiFrida": 0,
+    "utf16Frida": 0,
+    "oldThreads": {
+      "gmain": 0,
+      "gdbus": 0,
+      "gum-js-loop": 0
+    }
+  },
+  "jprobe-gadget-arm64.so": {
+    "sha256": "05327eded849288c9641db5789cdafaa79d699547df4dc06b0906eb2961d84e8",
+    "size": 39409456,
+    "asciiFrida": 0,
+    "utf16Frida": 0,
+    "oldThreads": {
+      "gmain": 0,
+      "gdbus": 0,
+      "gum-js-loop": 0
+    }
+  },
+  "jprobe-agent-arm.so": {
+    "sha256": "b4dc17edca76ef0d8cbd863a48ba3935962695a4fb37847b67c4f60c604da318",
+    "size": 23466224,
+    "asciiFrida": 0,
+    "utf16Frida": 0,
+    "oldThreads": {
+      "gmain": 0,
+      "gdbus": 0,
+      "gum-js-loop": 0
+    }
+  },
+  "jprobe-gadget-arm.so": {
+    "sha256": "cf07c5d0ea2ec54ba0172707683c8357a98d0935f34ddc49e01707fd9d5efd72",
+    "size": 23654672,
+    "asciiFrida": 0,
+    "utf16Frida": 0,
+    "oldThreads": {
+      "gmain": 0,
+      "gdbus": 0,
+      "gum-js-loop": 0
+    }
+  }
+}

@@ -1,0 +1,204 @@
+--- a/gum/backend-linux/gumandroid.c
++++ b/gum/backend-linux/gumandroid.c
+@@ -31,6 +31,7 @@
+ 
+ typedef struct _GumEnumerateModulesContext GumEnumerateModulesContext;
+ typedef struct _GumHandleContext GumHandleContext;
++typedef struct _GumModuleLinkState GumModuleLinkState;
+ 
+ typedef struct _GumSoinfoDetails GumSoinfoDetails;
+ typedef gboolean (* GumFoundSoinfoFunc) (const GumSoinfoDetails * details,
+@@ -67,6 +68,12 @@
+   gpointer caller_address;
+ };
+ 
++struct _GumModuleLinkState
++{
++  GumNativeModule * module;
++  gboolean unlinked;
++};
++
+ struct _GumEnumerateModulesContext
+ {
+   GumFoundModuleFunc func;
+@@ -396,6 +403,8 @@
+ static gboolean gum_emit_module_from_soinfo (const GumSoinfoDetails * details,
+     GumEnumerateModulesContext * ctx);
+ static gpointer gum_create_module_handle (GumNativeModule * module,
++    gpointer user_data);
++static gboolean gum_query_module_link_state (const GumSoinfoDetails * details,
+     gpointer user_data);
+ static void gum_enumerate_soinfo (GumFoundSoinfoFunc func, gpointer user_data);
+ static void gum_init_soinfo_details (GumSoinfoDetails * details, GumSoinfo * si,
+@@ -780,6 +789,31 @@
+   return carry_on;
+ }
+ 
++gboolean
++_gum_android_module_is_unlinked (GumNativeModule * self)
++{
++  GumModuleLinkState state = { self, FALSE };
++
++  if (gum_android_get_linker_flavor () == GUM_ANDROID_LINKER_NATIVE)
++    gum_enumerate_soinfo (gum_query_module_link_state, &state);
++
++  return state.unlinked;
++}
++
++static gboolean
++gum_query_module_link_state (const GumSoinfoDetails * details,
++                             gpointer user_data)
++{
++  GumModuleLinkState * state = user_data;
++
++  if (details->body->base != state->module->range.base_address ||
++      strcmp (details->path, state->module->path) != 0)
++    return TRUE;
++
++  state->unlinked = (details->body->flags & GUM_SOINFO_LINKED) == 0;
++  return FALSE;
++}
++
+ static gpointer
+ gum_create_module_handle (GumNativeModule * module,
+                           gpointer user_data)
+--- a/gum/backend-elf/gummodule-elf.c
++++ b/gum/backend-elf/gummodule-elf.c
+@@ -556,7 +556,12 @@
+         gum_android_try_resolve_magic_export (self->path, symbol_name, &addr))
+       return addr;
+ 
+-    if (module == gum_android_get_linker_module ())
++    /* Bionic notifies debuggers inside link_image(), before set_linked().
++     * Even RTLD_NOLOAD may recursively try to load that soinfo and abort.
++     * Resolve this module's exports from its mapped ELF during that window;
++     * do not cache a failed handle, so later lookups still use dlsym(). */
++    if (module == gum_android_get_linker_module () ||
++        _gum_android_module_is_unlinked (self))
+     {
+       GumFindExportByNameContext ctx;
+ 
+--- a/gum/backend-elf/gummodule-elf.h
++++ b/gum/backend-elf/gummodule-elf.h
+@@ -51,6 +51,11 @@
+ G_GNUC_INTERNAL GumElfModule * _gum_native_module_get_elf_module (
+     GumNativeModule * self);
+ 
++#ifdef HAVE_ANDROID
++G_GNUC_INTERNAL gboolean _gum_android_module_is_unlinked (
++    GumNativeModule * self);
++#endif
++
+ G_GNUC_INTERNAL gchar * _gum_native_module_find_path_by_address (
+     GumAddress address);
+ 
+--- a/gum/backend-posix/gummemory-posix.c
++++ b/gum/backend-posix/gummemory-posix.c
+@@ -13,6 +13,7 @@
+ #include <unistd.h>
+ #include <sys/mman.h>
+ #ifdef HAVE_ANDROID
++# include <sys/prctl.h>
+ # include <sys/syscall.h>
+ #endif
+ #ifdef HAVE_PROSPERO
+@@ -282,6 +283,20 @@
+ 
+   result = mmap (address, size, prot, base_flags | region_flags, -1, 0);
+ 
++#ifdef HAVE_ANDROID
++  if (result != MAP_FAILED)
++  {
++    gint saved_errno = errno;
++
++    /* Attribute our own anonymous pages, including bridge pages allocated RW
++     * and made executable later. Unsupported kernels retain the mmap result.
++     * Do not rename existing mappings or change their protection/content. */
++    prctl (PR_SET_VMA, PR_SET_VMA_ANON_NAME, (gulong) result, (gulong) size,
++        (gulong) "jprobe-page");
++    errno = saved_errno;
++  }
++#endif
++
+ #ifdef HAVE_PROSPERO
+   if (result == MAP_FAILED && (prot & PROT_EXEC) != 0)
+   {
+--- a/bindings/gumjs/gumffi.c
++++ b/bindings/gumjs/gumffi.c
+@@ -9,6 +9,43 @@
+ #include "gumffi.h"
+ 
+ #include <stdint.h>
++#ifdef HAVE_ANDROID
++# include "gummemory.h"
++# include <errno.h>
++# include <sys/prctl.h>
++#endif
++
++gpointer
++gum_ffi_closure_alloc (gsize size,
++                       gpointer * code)
++{
++  gpointer result;
++
++  result = ffi_closure_alloc (size, code);
++
++#ifdef HAVE_ANDROID
++  if (result != NULL)
++  {
++    gint saved_errno = errno;
++    gsize page_size = gum_query_page_size ();
++    gsize mask = ~(page_size - 1);
++    gsize writable_page = GPOINTER_TO_SIZE (result) & mask;
++    gsize executable_page = GPOINTER_TO_SIZE (*code) & mask;
++
++    /* libffi allocates closure pages outside Gum's allocator. Attribute only
++     * the pages it just handed us; file-backed aliases keep their own names.
++     * Naming is optional and must not change allocation or errno semantics. */
++    prctl (PR_SET_VMA, PR_SET_VMA_ANON_NAME, writable_page, page_size,
++        (gulong) "jprobe-closure");
++    if (executable_page != writable_page)
++      prctl (PR_SET_VMA, PR_SET_VMA_ANON_NAME, executable_page, page_size,
++          (gulong) "jprobe-closure");
++    errno = saved_errno;
++  }
++#endif
++
++  return result;
++}
+ 
+ typedef struct _GumFFITypeMapping GumFFITypeMapping;
+ typedef struct _GumFFIABIMapping GumFFIABIMapping;
+--- a/bindings/gumjs/gumffi.h
++++ b/bindings/gumjs/gumffi.h
+@@ -49,6 +49,8 @@
+ extern ffi_type gum_ffi_type_size_t;
+ extern ffi_type gum_ffi_type_ssize_t;
+ 
++G_GNUC_INTERNAL gpointer gum_ffi_closure_alloc (gsize size, gpointer * code);
++
+ G_GNUC_INTERNAL GumFFIArg * gum_ffi_ret_value (const ffi_type * type,
+     gpointer ret);
+ G_GNUC_INTERNAL gboolean gum_ffi_try_get_type_by_name (const gchar * name,
+--- a/bindings/gumjs/gumquickcore.c
++++ b/bindings/gumjs/gumquickcore.c
+@@ -5043,7 +5043,7 @@
+     abi = GUM_DEFAULT_FFI_ABI;
+   }
+ 
+-  cb->closure = ffi_closure_alloc (sizeof (ffi_closure), &ptr->value);
++  cb->closure = gum_ffi_closure_alloc (sizeof (ffi_closure), &ptr->value);
+   if (cb->closure == NULL)
+     goto alloc_failed;
+ 
+--- a/bindings/gumjs/gumv8core.cpp
++++ b/bindings/gumjs/gumv8core.cpp
+@@ -3896,7 +3896,7 @@
+   }
+ 
+   callback->closure =
+-      (ffi_closure *) ffi_closure_alloc (sizeof (ffi_closure), &func);
++      (ffi_closure *) gum_ffi_closure_alloc (sizeof (ffi_closure), &func);
+   if (callback->closure == NULL)
+   {
+     _gum_v8_throw_ascii_literal (isolate, "failed to allocate closure");

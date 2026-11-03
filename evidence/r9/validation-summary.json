@@ -1,0 +1,201 @@
+{
+  "timestamp": "2026-11-03T14:35:40.353538+08:00",
+  "finalBatchState": "PASSED",
+  "jobCounts": {
+    "PASS": 149,
+    "FAIL": 0,
+    "BLOCKED": 0,
+    "SKIP": 1
+  },
+  "jobs": [
+    {
+      "name": "qjs-functional",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 43,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "v8-functional",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 42,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 1
+      }
+    },
+    {
+      "name": "qjs-gadget",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 5,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "v8-gadget",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 5,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "qjs-lifecycle",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 3,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "v8-lifecycle",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 3,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "qjs-concurrency",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "v8-concurrency",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "qjs-detection",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 22,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    },
+    {
+      "name": "v8-detection",
+      "state": "PASSED",
+      "exitCode": 0,
+      "counts": {
+        "PASS": 22,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIP": 0
+      }
+    }
+  ],
+  "detection": {
+    "observations": 42,
+    "positive": 0,
+    "meaning": "observation collected; threshold verdict only; not a general nondetection claim"
+  },
+  "concurrency": {
+    "qjs": {
+      "pids": [
+        10477,
+        10518,
+        10559,
+        10600
+      ],
+      "checks": 23,
+      "seconds": 122.69866750016809
+    },
+    "v8": {
+      "pids": [
+        11324,
+        11377,
+        11423,
+        11467
+      ],
+      "checks": 23,
+      "seconds": 122.49210033332929
+    }
+  },
+  "deliveryComplete": true,
+  "acceptanceComplete": false,
+  "knownIssueResolved": true,
+  "knownIssue": "The controlled-reboot ART SIGSEGV at artQuickGenericJniTrampoline+88 / 0x10 was reproduced as a moving-GC race on an unpublished native ArtMethod clone and fixed in the bundled Java bridge for the tested Android 12/API 32 ARM64 target.",
+  "postFixValidation": {
+    "coldBoots": 3,
+    "coldBootJobs": 6,
+    "coldBootCounts": {
+      "PASS": 48,
+      "FAIL": 0,
+      "BLOCKED": 0,
+      "SKIP": 0
+    },
+    "forcedGc": {
+      "qjs": {
+        "PASS": 6,
+        "FAIL": 0
+      },
+      "v8": {
+        "PASS": 6,
+        "FAIL": 0
+      },
+      "beforePublicationMismatchReproduced": true,
+      "publicationRefreshVerified": true,
+      "postPublicationGcSynchronizationVerified": true
+    },
+    "functional": {
+      "qjs": {
+        "PASS": 43,
+        "FAIL": 0,
+        "SKIP": 0
+      },
+      "v8": {
+        "PASS": 42,
+        "FAIL": 0,
+        "SKIP": 1
+      }
+    },
+    "evidence": "java-gc-fix.json"
+  },
+  "limitations": [
+    "ARM32 static audit only",
+    "No new two-hour R9 soak",
+    "No root-disabled Gadget rerun for R9",
+    "No complete official Core/Gum suite"
+  ],
+  "sourcePatchSha256": "a3d21237a0ce0741703ee24f2fa733129d8b80026b47252ef8c9fe1eab495b94",
+  "fridaToolsPatchSha256": "eba3c230f2e8371de342f66ad14ed602ae14a3c0249c0df0750375958a99fcf1",
+  "javaBridgeSourceSha256": "5fd32f35e646316f23ebe86772da285144838b4a975e287c4184f4519fb9a099",
+  "javaBundleSha256": "ae4a20b8c1de145498156e9f612bc5a7e681bca1434f7ba517c49304e2dd0d51",
+  "evidenceRoot": "/Users/sunjie.sj/workspace/opensource/frida/verification/jprobe-regression/repair-20261103",
+  "postFixEvidenceRoot": "/Users/sunjie.sj/workspace/opensource/frida/verification/jprobe-regression/repair-java-cold-20261103"
+}

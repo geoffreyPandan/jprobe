@@ -254,7 +254,7 @@ index 52d1cec..3a9fe4f 100644
  
  const r2WasmPlugin: Plugin = {
 diff --git a/bridges/build.py b/bridges/build.py
-index 7b87dc5..db8f863 100644
+index 7b87dc5..6261c8b 100644
 --- a/bridges/build.py
 +++ b/bridges/build.py
 @@ -4,6 +4,9 @@ import sys
@@ -267,10 +267,18 @@ index 7b87dc5..db8f863 100644
  
  def main(argv):
      output_dir, priv_dir, npm, *inputs = [Path(d).resolve() for d in argv[1:]]
-@@ -42,10 +45,20 @@ def compile_bridges(inputs: List[Path], output_dir: Path, priv_dir: Path, npm: P
+@@ -42,10 +45,28 @@ def compile_bridges(inputs: List[Path], output_dir: Path, priv_dir: Path, npm: P
      }
  
      subprocess.run([npm, "install"], **run_kwargs)
++    # The root checkout carries the Jprobe Java bridge source because it may
++    # contain compatibility fixes beyond the published npm package. Use its
++    # Android implementation when present, while keeping npm's dependency
++    # layout so Rollup resolution and lockfile verification remain unchanged.
++    root_android = Path(__file__).resolve().parents[3] / "vendor" / "jprobe-java-bridge" / "lib" / "android.js"
++    if root_android.exists():
++        shutil.copy2(root_android,
++                     priv_dir / "node_modules" / "frida-java-bridge" / "lib" / "android.js")
 +    # Match the custom runtime API and Java cache/reason names before bundling.
 +    for bridge in ["java", "objc", "swift"]:
 +        for source in (priv_dir / "node_modules" / ("frida-" + bridge + "-bridge")).rglob("*.js"):

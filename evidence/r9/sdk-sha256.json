@@ -1,0 +1,10 @@
+{
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm64/lib/libv8-15.7.a": "1aed7ae2abba9595b1390986d230ab4a6a67f6ce6f3712504d1766341265a072",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm64/lib/libtcc.a": "7477e61578f3eab7394860cc8ae8e960dbb8fc08576751fb9e99575e31d5863a",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm64/lib/libglib-2.0.a": "ec41b15d0a7c4d2b259f8e18125340408f4a65a98660f606897ea86254d762f6",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm64/lib/libgio-2.0.a": "908fe5709ccb499e4b5ba8300123ba240bd65e760c80760f762f8435a9d018aa",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm/lib/libv8-15.7.a": "032a1cbdc48566d08f29555f897d7ebb7fb8e06bd2e335623315573a84963824",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm/lib/libtcc.a": "dd657e9da29f5afca196f22407643359a307c3751c42676f3565ff882f48c4a3",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm/lib/libglib-2.0.a": "d66dab6e2f102f371c3b0951be8007efc2200b14d31bfdbde813edff16a0f541",
+  "/home/jim/jprobe/candidates/thread-names-r8/source/deps/sdk-android-arm/lib/libgio-2.0.a": "bf0963a4261fad9f8e497f010d2811382c9f1b4ae65d7e0826959a9a79b59246"
+}
